@@ -1267,17 +1267,18 @@ Btn(tSrv, "Lag: Part Spam", function()
         end
     end)
 end, 8)
-Btn(tSrv, "Lag: Remote Flood", function()
+Btn(tSrv, "Lag: Remote Flood (Safe)", function()
     task.spawn(function()
+        -- Slower, won't get kicked
         local remotes = {}
-        for _, v in ipairs(game:GetDescendants()) do
+        for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
             if v:IsA("RemoteEvent") then table.insert(remotes, v) end
         end
-        for round = 1, 5 do
+        for round = 1, 3 do
             for _, r in ipairs(remotes) do
-                pcall(function() r:FireServer(string.rep("x", 200)) end)
+                pcall(function() r:FireServer() end)
+                task.wait(0.1)
             end
-            task.wait(0.1)
         end
     end)
 end, 9)
@@ -1299,16 +1300,16 @@ Btn(tSrv, "Lag: Particle Spam", function()
         end
     end)
 end, 10)
-Btn(tSrv, "Lag: Network Spam", function()
+Btn(tSrv, "Lag: Network Spam (Safe)", function()
     task.spawn(function()
         pcall(function()
             local rem = game:GetService("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList")
             if rem then
-                local bigData = {}
-                for i = 1, 300 do table.insert(bigData, {string.rep("a", 200)}) end
-                for i = 1, 15 do
-                    pcall(function() rem:FireServer(bigData) end)
-                    task.wait(0.05)
+                local smallData = {}
+                for i = 1, 50 do table.insert(smallData, {tostring(i)}) end
+                for i = 1, 5 do
+                    pcall(function() rem:FireServer(smallData) end)
+                    task.wait(0.5)
                 end
             end
         end)
