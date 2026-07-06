@@ -1043,13 +1043,20 @@ end, 3)
 Toggle(tM, "Chat Spam", "ChatSpam", nil, 1)
 Toggle(tM, "Spin Self", "SpinSelf", nil, 2)
 Slider(tM, "Spin Speed", "SpinSelfSpeed", 1, 50, nil, 3)
-Toggle(tM, "Headless", "HeadlessTroll", function(on)
-    pcall(function()
-        local head = Char:FindFirstChild("Head")
-        if head then head.Transparency = on and 1 or 0 end
-        local face = head and head:FindFirstChildOfClass("Decal")
-        if face then face.Transparency = on and 1 or 0 end
-    end)
+Toggle(tM, "Headless (FE)", "HeadlessTroll", function(on)
+    if on then
+        pcall(function()
+            local neck = nil
+            for _, v in ipairs(Char:GetDescendants()) do
+                if v:IsA("Motor6D") and v.Name == "Neck" then
+                    neck = v; break
+                end
+            end
+            if neck then neck:Destroy() end
+            local head = Char:FindFirstChild("Head")
+            if head then head.CanCollide = false end
+        end)
+    end
 end, 4)
 Toggle(tM, "Giant Self", "GiantSelf", function(on)
     if on then State.TinySelf = false end
@@ -1963,70 +1970,104 @@ task.spawn(function()
 
     -- PC Button
     local PCBtn = N("TextButton",{
-        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,140,0,140),
-        Position=UDim2.new(0.35,0,0.55,0), BackgroundColor3=Color3.fromRGB(28,28,36),
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,120,0,120),
+        Position=UDim2.new(0.2,0,0.55,0), BackgroundColor3=Color3.fromRGB(28,28,36),
         BorderSizePixel=0, Text="", AutoButtonColor=false, ZIndex=152, Parent=DeviceScreen
     })
     RND(10, PCBtn); BDR(C.GBdr, 1, PCBtn)
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
         Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
-        Text="🖥️", TextSize=42, ZIndex=153, Parent=PCBtn
+        Text="🖥️", TextSize=38, ZIndex=153, Parent=PCBtn
     })
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
         Position=UDim2.new(0.5,0,0.72,0), BackgroundTransparency=1,
-        Text="PC", Font=Enum.Font.GothamBold, TextSize=14, TextColor3=C.Txt, ZIndex=153, Parent=PCBtn
+        Text="PC", Font=Enum.Font.GothamBold, TextSize=13, TextColor3=C.Txt, ZIndex=153, Parent=PCBtn
+    })
+
+    -- Tablet Button
+    local TabletBtn = N("TextButton",{
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,120,0,120),
+        Position=UDim2.new(0.5,0,0.55,0), BackgroundColor3=Color3.fromRGB(28,28,36),
+        BorderSizePixel=0, Text="", AutoButtonColor=false, ZIndex=152, Parent=DeviceScreen
+    })
+    RND(10, TabletBtn); BDR(C.GBdr, 1, TabletBtn)
+    N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
+        Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
+        Text="📋", TextSize=38, ZIndex=153, Parent=TabletBtn
+    })
+    N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
+        Position=UDim2.new(0.5,0,0.72,0), BackgroundTransparency=1,
+        Text="Tablet", Font=Enum.Font.GothamBold, TextSize=13, TextColor3=C.Txt, ZIndex=153, Parent=TabletBtn
     })
 
     -- Mobile Button
     local MobileBtn = N("TextButton",{
-        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,140,0,140),
-        Position=UDim2.new(0.65,0,0.55,0), BackgroundColor3=Color3.fromRGB(28,28,36),
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,120,0,120),
+        Position=UDim2.new(0.8,0,0.55,0), BackgroundColor3=Color3.fromRGB(28,28,36),
         BorderSizePixel=0, Text="", AutoButtonColor=false, ZIndex=152, Parent=DeviceScreen
     })
     RND(10, MobileBtn); BDR(C.GBdr, 1, MobileBtn)
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
         Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
-        Text="📱", TextSize=42, ZIndex=153, Parent=MobileBtn
+        Text="📱", TextSize=38, ZIndex=153, Parent=MobileBtn
     })
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
         Position=UDim2.new(0.5,0,0.72,0), BackgroundTransparency=1,
-        Text="Mobile", Font=Enum.Font.GothamBold, TextSize=14, TextColor3=C.Txt, ZIndex=153, Parent=MobileBtn
+        Text="Mobile", Font=Enum.Font.GothamBold, TextSize=13, TextColor3=C.Txt, ZIndex=153, Parent=MobileBtn
     })
 
     -- Hover effects
     PCBtn.MouseEnter:Connect(function() TW(PCBtn, 0.2, {BackgroundColor3=Color3.fromRGB(40,40,52)}) end)
     PCBtn.MouseLeave:Connect(function() TW(PCBtn, 0.2, {BackgroundColor3=Color3.fromRGB(28,28,36)}) end)
+    TabletBtn.MouseEnter:Connect(function() TW(TabletBtn, 0.2, {BackgroundColor3=Color3.fromRGB(40,40,52)}) end)
+    TabletBtn.MouseLeave:Connect(function() TW(TabletBtn, 0.2, {BackgroundColor3=Color3.fromRGB(28,28,36)}) end)
     MobileBtn.MouseEnter:Connect(function() TW(MobileBtn, 0.2, {BackgroundColor3=Color3.fromRGB(40,40,52)}) end)
     MobileBtn.MouseLeave:Connect(function() TW(MobileBtn, 0.2, {BackgroundColor3=Color3.fromRGB(28,28,36)}) end)
 
-    local isMobile = false
+    local deviceMode = "pc" -- "pc", "tablet", "mobile"
 
     local function showMainMenu()
         TW(DeviceScreen, 0.3, {BackgroundTransparency=1})
         task.wait(0.35)
         DeviceScreen.Visible = false
 
-        if isMobile then
-            -- MOBILE: bigger window, bigger buttons, no tab sidebar
+        if deviceMode == "mobile" then
+            -- MOBILE: full width, horizontal tabs, small text
             Win.Size = UDim2.new(0.92, 0, 0.8, 0)
             Win.Position = UDim2.new(0.04, 0, 0.1, 0)
             Shadow.Size = UDim2.new(0.94, 0, 0.82, 0)
             Shadow.Position = UDim2.new(0.03, 0, 0.09, 0)
-            -- Make tab bar horizontal at top instead of vertical
             TabBar.Position = UDim2.new(0, 0, 0, HDR_H)
             TabBar.Size = UDim2.new(1, 0, 0, 35)
             Content.Position = UDim2.new(0, 0, 0, HDR_H + 36)
             Content.Size = UDim2.new(1, 0, 1, -(HDR_H + 36))
-            -- Rearrange tab buttons horizontally
             for i, name in ipairs(tabDefs) do
                 local btn = TabBtns[name]
                 btn.Size = UDim2.new(0, math.floor((vp.X * 0.92) / #tabDefs), 0, 34)
                 btn.Position = UDim2.new(0, (i-1) * math.floor((vp.X * 0.92) / #tabDefs), 0, 0)
                 btn.TextSize = 9
+            end
+        elseif deviceMode == "tablet" then
+            -- TABLET: wider than mobile, horizontal tabs, bigger text
+            Win.Size = UDim2.new(0.85, 0, 0.75, 0)
+            Win.Position = UDim2.new(0.075, 0, 0.12, 0)
+            Shadow.Size = UDim2.new(0.87, 0, 0.77, 0)
+            Shadow.Position = UDim2.new(0.065, 0, 0.11, 0)
+            TabBar.Position = UDim2.new(0, 0, 0, HDR_H)
+            TabBar.Size = UDim2.new(1, 0, 0, 40)
+            Content.Position = UDim2.new(0, 0, 0, HDR_H + 41)
+            Content.Size = UDim2.new(1, 0, 1, -(HDR_H + 41))
+            for i, name in ipairs(tabDefs) do
+                local btn = TabBtns[name]
+                btn.Size = UDim2.new(0, math.floor((vp.X * 0.85) / #tabDefs), 0, 39)
+                btn.Position = UDim2.new(0, (i-1) * math.floor((vp.X * 0.85) / #tabDefs), 0, 0)
+                btn.TextSize = 11
             end
         end
 
@@ -2046,12 +2087,37 @@ task.spawn(function()
     end
 
     PCBtn.MouseButton1Click:Connect(function()
-        isMobile = false
+        deviceMode = "pc"
         showMainMenu()
     end)
 
+    TabletBtn.MouseButton1Click:Connect(function()
+        deviceMode = "tablet"
+        showMainMenu()
+        -- Floating toggle button for tablet
+        local tabToggle = N("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            Size = UDim2.new(0, 45, 0, 45),
+            Position = UDim2.new(1, -10, 0.5, 0),
+            BackgroundColor3 = C.Acc,
+            BackgroundTransparency = 0.3,
+            BorderSizePixel = 0,
+            Text = "BS",
+            Font = Enum.Font.GothamBold,
+            TextSize = 15,
+            TextColor3 = Color3.new(1,1,1),
+            ZIndex = 200,
+            Parent = SG
+        })
+        RND(22, tabToggle)
+        tabToggle.MouseButton1Click:Connect(function()
+            Win.Visible = not Win.Visible
+            Shadow.Visible = Win.Visible
+        end)
+    end)
+
     MobileBtn.MouseButton1Click:Connect(function()
-        isMobile = true
+        deviceMode = "mobile"
         showMainMenu()
         -- Create floating toggle button for mobile (since no Insert key)
         local mobileToggle = N("TextButton", {
