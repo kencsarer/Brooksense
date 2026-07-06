@@ -1523,19 +1523,114 @@ task.spawn(function()
     task.wait(0.5)
     Intro.Visible = false
 
-    -- Show window
-    Win.Visible = true
-    Shadow.Visible = true
-    Win.BackgroundTransparency = 1
-    Shadow.BackgroundTransparency = 1
-    TW(Win, 0.4, {BackgroundTransparency=0}, Enum.EasingStyle.Quint)
-    TW(Shadow, 0.4, {BackgroundTransparency=0.45})
-    TBar.BackgroundTransparency = 1
-    TabBar.BackgroundTransparency = 1
-    Content.BackgroundTransparency = 1
-    TW(TBar, 0.35, {BackgroundTransparency=0})
-    TW(TabBar, 0.35, {BackgroundTransparency=0})
-    TW(Content, 0.35, {BackgroundTransparency=0})
+    -- DEVICE SELECTOR SCREEN
+    local DeviceScreen = N("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(12,12,16),BackgroundTransparency=0,BorderSizePixel=0,ZIndex=150,Parent=SG})
+    local DSTitle = N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(0,400,0,40),
+        Position=UDim2.new(0.5,0,0.15,0), BackgroundTransparency=1, RichText=true,
+        Text='<font color="#B0B0C0">brook</font><font color="#C837C8">sense</font>',
+        Font=Enum.Font.GothamBold, TextSize=28, TextColor3=C.Txt, ZIndex=151, Parent=DeviceScreen
+    })
+    local DSSub = N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(0,400,0,20),
+        Position=UDim2.new(0.5,0,0.23,0), BackgroundTransparency=1,
+        Text="Select your device", Font=Enum.Font.Gotham, TextSize=14,
+        TextColor3=C.TxtD, ZIndex=151, Parent=DeviceScreen
+    })
+
+    -- PC Button
+    local PCBtn = N("TextButton",{
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,140,0,140),
+        Position=UDim2.new(0.35,0,0.55,0), BackgroundColor3=Color3.fromRGB(28,28,36),
+        BorderSizePixel=0, Text="", AutoButtonColor=false, ZIndex=152, Parent=DeviceScreen
+    })
+    RND(10, PCBtn); BDR(C.GBdr, 1, PCBtn)
+    N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
+        Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
+        Text="🖥️", TextSize=42, ZIndex=153, Parent=PCBtn
+    })
+    N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
+        Position=UDim2.new(0.5,0,0.72,0), BackgroundTransparency=1,
+        Text="PC", Font=Enum.Font.GothamBold, TextSize=14, TextColor3=C.Txt, ZIndex=153, Parent=PCBtn
+    })
+
+    -- Mobile Button
+    local MobileBtn = N("TextButton",{
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,140,0,140),
+        Position=UDim2.new(0.65,0,0.55,0), BackgroundColor3=Color3.fromRGB(28,28,36),
+        BorderSizePixel=0, Text="", AutoButtonColor=false, ZIndex=152, Parent=DeviceScreen
+    })
+    RND(10, MobileBtn); BDR(C.GBdr, 1, MobileBtn)
+    N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
+        Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
+        Text="📱", TextSize=42, ZIndex=153, Parent=MobileBtn
+    })
+    N("TextLabel",{
+        AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
+        Position=UDim2.new(0.5,0,0.72,0), BackgroundTransparency=1,
+        Text="Mobile", Font=Enum.Font.GothamBold, TextSize=14, TextColor3=C.Txt, ZIndex=153, Parent=MobileBtn
+    })
+
+    -- Hover effects
+    PCBtn.MouseEnter:Connect(function() TW(PCBtn, 0.2, {BackgroundColor3=Color3.fromRGB(40,40,52)}) end)
+    PCBtn.MouseLeave:Connect(function() TW(PCBtn, 0.2, {BackgroundColor3=Color3.fromRGB(28,28,36)}) end)
+    MobileBtn.MouseEnter:Connect(function() TW(MobileBtn, 0.2, {BackgroundColor3=Color3.fromRGB(40,40,52)}) end)
+    MobileBtn.MouseLeave:Connect(function() TW(MobileBtn, 0.2, {BackgroundColor3=Color3.fromRGB(28,28,36)}) end)
+
+    local isMobile = false
+
+    local function showMainMenu()
+        TW(DeviceScreen, 0.3, {BackgroundTransparency=1})
+        task.wait(0.35)
+        DeviceScreen.Visible = false
+
+        if isMobile then
+            -- MOBILE: bigger window, bigger buttons, no tab sidebar
+            Win.Size = UDim2.new(0.92, 0, 0.8, 0)
+            Win.Position = UDim2.new(0.04, 0, 0.1, 0)
+            Shadow.Size = UDim2.new(0.94, 0, 0.82, 0)
+            Shadow.Position = UDim2.new(0.03, 0, 0.09, 0)
+            -- Make tab bar horizontal at top instead of vertical
+            TabBar.Position = UDim2.new(0, 0, 0, HDR_H)
+            TabBar.Size = UDim2.new(1, 0, 0, 35)
+            Content.Position = UDim2.new(0, 0, 0, HDR_H + 36)
+            Content.Size = UDim2.new(1, 0, 1, -(HDR_H + 36))
+            -- Rearrange tab buttons horizontally
+            for i, name in ipairs(tabDefs) do
+                local btn = TabBtns[name]
+                btn.Size = UDim2.new(0, math.floor((vp.X * 0.92) / #tabDefs), 0, 34)
+                btn.Position = UDim2.new(0, (i-1) * math.floor((vp.X * 0.92) / #tabDefs), 0, 0)
+                btn.TextSize = 9
+            end
+        end
+
+        -- Show window (same animation for both)
+        Win.Visible = true
+        Shadow.Visible = true
+        Win.BackgroundTransparency = 1
+        Shadow.BackgroundTransparency = 1
+        TW(Win, 0.4, {BackgroundTransparency=0}, Enum.EasingStyle.Quint)
+        TW(Shadow, 0.4, {BackgroundTransparency=0.45})
+        TBar.BackgroundTransparency = 1
+        TabBar.BackgroundTransparency = 1
+        Content.BackgroundTransparency = 1
+        TW(TBar, 0.35, {BackgroundTransparency=0})
+        TW(TabBar, 0.35, {BackgroundTransparency=0})
+        TW(Content, 0.35, {BackgroundTransparency=0})
+    end
+
+    PCBtn.MouseButton1Click:Connect(function()
+        isMobile = false
+        showMainMenu()
+    end)
+
+    MobileBtn.MouseButton1Click:Connect(function()
+        isMobile = true
+        showMainMenu()
+    end)
 
     -- Chat message on join (once)
     task.spawn(function()
