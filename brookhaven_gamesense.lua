@@ -98,6 +98,10 @@ local State = {
     Annoy=false, AnnoyTarget="", AnnoyFront=false,
     HeadlessTroll=false,
     GiantSelf=false, TinySelf=false,
+    Attach=false, AttachTarget="",
+    Copycat=false, CopycatTarget="",
+    DiscoLights=false,
+    SpamEmotes=false,
     -- Avatar
     SkinTarget="",
     RainbowSkin=false, RainbowCar=false,
@@ -1040,6 +1044,122 @@ Toggle(tAn, "Face (TP front)", "AnnoyFront", function(on)
 end, 3)
 
 -- Misc Trolls
+Toggle(tM, "Attach (Ride Head)", "Attach", function(on)
+    if on then
+        task.spawn(function()
+            while State.Attach do
+                local t = FindPlayer(State.AttachTarget)
+                if t and t.Character then
+                    local tH = t.Character:FindFirstChild("Head")
+                    if tH then
+                        HRP.CFrame = tH.CFrame * CFrame.new(0, 1.5, 0)
+                        HRP.Velocity = Vector3.new(0,0,0)
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+end, 1)
+TBox(tM, "Attach target...", "AttachTarget", 2)
+Toggle(tM, "Copycat (Mirror)", "Copycat", function(on)
+    if on then
+        task.spawn(function()
+            local lastCF = nil
+            while State.Copycat do
+                local t = FindPlayer(State.CopycatTarget)
+                if t and t.Character then
+                    local tHRP = t.Character:FindFirstChild("HumanoidRootPart")
+                    if tHRP then
+                        if lastCF then
+                            local diff = tHRP.CFrame * lastCF:Inverse()
+                            HRP.CFrame = HRP.CFrame * diff
+                        end
+                        lastCF = tHRP.CFrame
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+end, 3)
+TBox(tM, "Copycat target...", "CopycatTarget", 4)
+Toggle(tM, "Disco Lights", "DiscoLights", function(on)
+    if on then
+        task.spawn(function()
+            while State.DiscoLights do
+                Lighting.Ambient = Color3.fromHSV(math.random(), 1, 1)
+                Lighting.OutdoorAmbient = Color3.fromHSV(math.random(), 1, 1)
+                Lighting.FogColor = Color3.fromHSV(math.random(), 0.5, 1)
+                task.wait(0.3)
+            end
+            -- Reset
+            Lighting.Ambient = Color3.fromRGB(128,128,128)
+            Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
+            Lighting.FogColor = Color3.fromRGB(192,192,192)
+        end)
+    end
+end, 5)
+Toggle(tM, "Spam Emotes", "SpamEmotes", function(on)
+    if on then
+        task.spawn(function()
+            while State.SpamEmotes do
+                pcall(function() Hum.Sit = true end)
+                task.wait(0.4)
+                pcall(function() Hum.Sit = false; Hum:ChangeState(Enum.HumanoidStateType.Jumping) end)
+                task.wait(0.4)
+            end
+        end)
+    end
+end, 6)
+Btn(tM, "Push Nearest", function()
+    local best, bd = nil, math.huge
+    for _, p in ipairs(GetPlayers()) do
+        if p.Character then
+            local r = p.Character:FindFirstChild("HumanoidRootPart")
+            if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = r end end
+        end
+    end
+    if best and bd < 15 then
+        pcall(function()
+            best.Velocity = (best.Position - HRP.Position).Unit * 150 + Vector3.new(0, 80, 0)
+        end)
+    end
+end, 7)
+Btn(tM, "Trap Nearest (Box)", function()
+    local best, bd = nil, math.huge
+    for _, p in ipairs(GetPlayers()) do
+        if p.Character then
+            local r = p.Character:FindFirstChild("HumanoidRootPart")
+            if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = r end end
+        end
+    end
+    if best then
+        local pos = best.Position
+        local walls = {
+            {CFrame.new(pos + Vector3.new(3,5,0)), Vector3.new(1,10,6)},
+            {CFrame.new(pos + Vector3.new(-3,5,0)), Vector3.new(1,10,6)},
+            {CFrame.new(pos + Vector3.new(0,5,3)), Vector3.new(6,10,1)},
+            {CFrame.new(pos + Vector3.new(0,5,-3)), Vector3.new(6,10,1)},
+            {CFrame.new(pos + Vector3.new(0,10,0)), Vector3.new(6,1,6)},
+        }
+        for _, w in ipairs(walls) do
+            local p = Instance.new("Part")
+            p.CFrame = w[1]; p.Size = w[2]
+            p.Anchored = true; p.Transparency = 0.5
+            p.BrickColor = BrickColor.new("Really black")
+            p.Name = "GS_Trap"
+            p.Parent = workspace
+        end
+        -- Auto remove after 8 seconds
+        task.spawn(function()
+            task.wait(8)
+            for _, obj in ipairs(workspace:GetChildren()) do
+                if obj.Name == "GS_Trap" then obj:Destroy() end
+            end
+        end)
+    end
+end, 8)
 Toggle(tM, "Invisible (local)", "Invisible", function(on)
     if not Char then return end
     for _, p in ipairs(Char:GetDescendants()) do
@@ -1835,7 +1955,7 @@ task.spawn(function()
     -- Chat message on join (once)
     task.spawn(function()
         task.wait(4)
-        SendChat("brooksense "..VERSION.." by kencsar - best brookhaven script")
+        SendChat("brook.sense "..VERSION.." by kencsar")
     end)
 end)
 
