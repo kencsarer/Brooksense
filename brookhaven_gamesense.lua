@@ -14,7 +14,7 @@ if not task then
 end
 
 -- CONFIG
-local WHITELIST   = { "kencsar", "w3423rftgvgr", "Gigihagaq" }
+local WHITELIST   = { "kencsar", "w3423rftgvgr", "Gigihagaq", "vargaviktot" }
 local WHITELIST_ID = 7081707910
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1523520979198935160/V7kuHwFSKMLPRid1V3VEMfkPuMCIqvA93Y-QdPboOT8a1c29QoeFlQmUobsCorEtZRvq"
 local DISCORD_INV = "https://discord.gg/nvuAjkcWX"
