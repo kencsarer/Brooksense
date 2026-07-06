@@ -2053,6 +2053,43 @@ task.spawn(function()
     MobileBtn.MouseButton1Click:Connect(function()
         isMobile = true
         showMainMenu()
+        -- Create floating toggle button for mobile (since no Insert key)
+        local mobileToggle = N("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            Size = UDim2.new(0, 40, 0, 40),
+            Position = UDim2.new(1, -10, 0.5, 0),
+            BackgroundColor3 = C.Acc,
+            BackgroundTransparency = 0.3,
+            BorderSizePixel = 0,
+            Text = "BS",
+            Font = Enum.Font.GothamBold,
+            TextSize = 14,
+            TextColor3 = Color3.new(1,1,1),
+            ZIndex = 200,
+            Parent = SG
+        })
+        RND(20, mobileToggle)
+        mobileToggle.MouseButton1Click:Connect(function()
+            Win.Visible = not Win.Visible
+            Shadow.Visible = Win.Visible
+        end)
+        -- Make it draggable
+        local mtDrag = false
+        local mtOff = Vector2.new(0,0)
+        mobileToggle.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.Touch then
+                mtDrag = true
+                mtOff = Vector2.new(i.Position.X - mobileToggle.AbsolutePosition.X, i.Position.Y - mobileToggle.AbsolutePosition.Y)
+            end
+        end)
+        mobileToggle.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.Touch then mtDrag = false end
+        end)
+        UserInputService.InputChanged:Connect(function(i)
+            if mtDrag and i.UserInputType == Enum.UserInputType.Touch then
+                mobileToggle.Position = UDim2.new(0, i.Position.X - mtOff.X, 0, i.Position.Y - mtOff.Y)
+            end
+        end)
     end)
 
     -- Chat message on join (once)
