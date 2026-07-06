@@ -14,7 +14,7 @@ if not task then
 end
 
 -- CONFIG
-local WHITELIST   = { "kencsar", "w3423rftgvgr" }
+local WHITELIST   = { "kencsar", "w3423rftgvgr", "Gigihagaq" }
 local WHITELIST_ID = 7081707910
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1523520979198935160/V7kuHwFSKMLPRid1V3VEMfkPuMCIqvA93Y-QdPboOT8a1c29QoeFlQmUobsCorEtZRvq"
 local DISCORD_INV = "https://discord.gg/nvuAjkcWX"
@@ -58,6 +58,11 @@ if not allowed then
     l.TextColor3 = Color3.fromRGB(200,55,200)
     l.TextWrapped = true
     l.Parent = f
+    -- Auto close after 10 seconds
+    task.spawn(function()
+        task.wait(10)
+        sg:Destroy()
+    end)
     return
 end
 
@@ -90,7 +95,7 @@ local State = {
     FlingTarget="", FreezeTarget="",
     SpinSelf=false, SpinSelfSpeed=10,
     Fling=false, FlingPower=500,
-    Annoy=false, AnnoyTarget="",
+    Annoy=false, AnnoyTarget="", AnnoyFront=false,
     HeadlessTroll=false,
     GiantSelf=false, TinySelf=false,
     -- Avatar
@@ -1017,6 +1022,22 @@ Toggle(tAn, "Annoy (TP behind)", "Annoy", function(on)
         end)
     end
 end, 2)
+Toggle(tAn, "Face (TP front)", "AnnoyFront", function(on)
+    if on then
+        task.spawn(function()
+            while State.AnnoyFront do
+                local t = FindPlayer(State.AnnoyTarget)
+                if t and t.Character then
+                    local tHRP = t.Character:FindFirstChild("HumanoidRootPart")
+                    if tHRP then
+                        HRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, -2)
+                    end
+                end
+                task.wait(0.2)
+            end
+        end)
+    end
+end, 3)
 
 -- Misc Trolls
 Toggle(tM, "Invisible (local)", "Invisible", function(on)
