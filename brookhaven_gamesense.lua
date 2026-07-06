@@ -1017,7 +1017,7 @@ Toggle(tAn, "Annoy (TP behind)", "Annoy", function(on)
                         HRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, 2)
                     end
                 end
-                task.wait(0.2)
+                task.wait(0.5)
             end
         end)
     end
@@ -1033,7 +1033,7 @@ Toggle(tAn, "Face (TP front)", "AnnoyFront", function(on)
                         HRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, -2)
                     end
                 end
-                task.wait(0.2)
+                task.wait(0.5)
             end
         end)
     end
@@ -1835,7 +1835,7 @@ task.spawn(function()
     -- Chat message on join (once)
     task.spawn(function()
         task.wait(4)
-        SendChat("brooksense "..VERSION.." - best brookhaven script")
+        SendChat("brooksense "..VERSION.." by kencsar - best brookhaven script")
     end)
 end)
 
