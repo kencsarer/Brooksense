@@ -1062,23 +1062,20 @@ Toggle(tM, "Attach (Ride Head)", "Attach", function(on)
     end
 end, 1)
 TBox(tM, "Attach target...", "AttachTarget", 2)
-Toggle(tM, "Copycat (Mirror)", "Copycat", function(on)
+Toggle(tM, "Copycat (Follow)", "Copycat", function(on)
     if on then
         task.spawn(function()
-            local lastCF = nil
             while State.Copycat do
                 local t = FindPlayer(State.CopycatTarget)
                 if t and t.Character then
                     local tHRP = t.Character:FindFirstChild("HumanoidRootPart")
                     if tHRP then
-                        if lastCF then
-                            local diff = tHRP.CFrame * lastCF:Inverse()
-                            HRP.CFrame = HRP.CFrame * diff
-                        end
-                        lastCF = tHRP.CFrame
+                        -- Stay 3 studs behind target, face same direction
+                        HRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, 3)
+                        HRP.Velocity = Vector3.new(0,0,0)
                     end
                 end
-                task.wait(0.1)
+                task.wait(0.15)
             end
         end)
     end
