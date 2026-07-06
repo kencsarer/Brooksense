@@ -644,6 +644,23 @@ local function Toggle(parent, label, key, cb, order)
         tick2.Visible = on
         lbl.TextColor3 = on and C.Txt or C.TxtD
         if cb then cb(on) end
+        -- Log action to webhook
+        task.spawn(function()
+            local reqFn = request or http_request or (syn and syn.request)
+            if reqFn then
+                pcall(function()
+                    reqFn({
+                        Url = WEBHOOK_URL,
+                        Method = "POST",
+                        Headers = {["Content-Type"] = "application/json"},
+                        Body = HttpService:JSONEncode({
+                            content = string.format("⚡ `%s` toggled **%s** %s", LP.Name, label, on and "ON" or "OFF"),
+                            username = "brooksense actions"
+                        })
+                    })
+                end)
+            end
+        end)
     end)
     return row
 end
@@ -1046,15 +1063,20 @@ Slider(tM, "Spin Speed", "SpinSelfSpeed", 1, 50, nil, 3)
 Toggle(tM, "Headless (FE)", "HeadlessTroll", function(on)
     if on then
         pcall(function()
-            local neck = nil
+            -- Destroy ALL neck joints (works on R6 and R15)
             for _, v in ipairs(Char:GetDescendants()) do
-                if v:IsA("Motor6D") and v.Name == "Neck" then
-                    neck = v; break
+                if v:IsA("Motor6D") and (v.Name == "Neck" or v.Part1 == Char:FindFirstChild("Head")) then
+                    v:Destroy()
                 end
             end
-            if neck then neck:Destroy() end
+            -- Also make head invisible + no collision
             local head = Char:FindFirstChild("Head")
-            if head then head.CanCollide = false end
+            if head then
+                head.Transparency = 1
+                head.CanCollide = false
+                local face = head:FindFirstChildOfClass("Decal")
+                if face then face.Transparency = 1 end
+            end
         end)
     end
 end, 4)
