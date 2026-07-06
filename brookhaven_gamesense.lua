@@ -1064,20 +1064,24 @@ end, 1)
 TBox(tM, "Attach target...", "AttachTarget", 2)
 Toggle(tM, "Copycat (Follow)", "Copycat", function(on)
     if on then
+        Hum.PlatformStand = true
         task.spawn(function()
             while State.Copycat do
                 local t = FindPlayer(State.CopycatTarget)
                 if t and t.Character then
                     local tHRP = t.Character:FindFirstChild("HumanoidRootPart")
                     if tHRP then
-                        -- Stay 3 studs behind target, face same direction
-                        HRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, 3)
+                        local targetCF = tHRP.CFrame
+                        HRP.CFrame = CFrame.new(targetCF.Position + targetCF.LookVector * -3) * CFrame.Angles(0, math.atan2(-targetCF.LookVector.X, -targetCF.LookVector.Z), 0)
                         HRP.Velocity = Vector3.new(0,0,0)
                     end
                 end
-                task.wait(0.15)
+                task.wait(0.25)
             end
+            Hum.PlatformStand = false
         end)
+    else
+        Hum.PlatformStand = false
     end
 end, 3)
 TBox(tM, "Copycat target...", "CopycatTarget", 4)
