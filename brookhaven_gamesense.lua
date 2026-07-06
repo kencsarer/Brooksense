@@ -1324,6 +1324,73 @@ Btn(tSrv, "Stop Lag Effects", function()
         if obj:IsA("Part") and not obj.Anchored and obj.Size == Vector3.new(2,2,2) then obj:Destroy() end
     end
 end, 12)
+Btn(tSrv, "Lag: Item Spam (Extinguisher)", function()
+    -- Brookhaven item spam: request tool many times, equip all, drop to workspace
+    task.spawn(function()
+        local toolRemote = GetRemote("tools") or GetRemote("Tools")
+        if not toolRemote then
+            print("[brooksense] Tools remote not found")
+            return
+        end
+        for i = 1, 30 do
+            pcall(function()
+                toolRemote:InvokeServer("PickingToolsFireExtinguisher")
+            end)
+            pcall(function()
+                for _, t in ipairs(LP.Backpack:GetChildren()) do
+                    if t:IsA("Tool") then
+                        Hum:EquipTool(t)
+                        pcall(function() t.Handle.Mesh:Destroy() end)
+                        t.Parent = workspace
+                    end
+                end
+            end)
+            task.wait(0.05)
+        end
+    end)
+end, 13)
+Btn(tSrv, "Lag: Item Spam (SWAT Shield)", function()
+    task.spawn(function()
+        local toolRemote = GetRemote("tools") or GetRemote("Tools")
+        if not toolRemote then return end
+        for i = 1, 30 do
+            pcall(function()
+                toolRemote:InvokeServer("PickingToolsSWATShield")
+            end)
+            pcall(function()
+                for _, t in ipairs(LP.Backpack:GetChildren()) do
+                    if t:IsA("Tool") then
+                        Hum:EquipTool(t)
+                        pcall(function() t.Handle.Mesh:Destroy() end)
+                        t.Parent = workspace
+                    end
+                end
+            end)
+            task.wait(0.05)
+        end
+    end)
+end, 14)
+Btn(tSrv, "Lag: Item Spam (Taser)", function()
+    task.spawn(function()
+        local toolRemote = GetRemote("tools") or GetRemote("Tools")
+        if not toolRemote then return end
+        for i = 1, 30 do
+            pcall(function()
+                toolRemote:InvokeServer("PickingToolsTaser")
+            end)
+            pcall(function()
+                for _, t in ipairs(LP.Backpack:GetChildren()) do
+                    if t:IsA("Tool") then
+                        Hum:EquipTool(t)
+                        pcall(function() t.Handle.Mesh:Destroy() end)
+                        t.Parent = workspace
+                    end
+                end
+            end)
+            task.wait(0.05)
+        end
+    end)
+end, 15)
 
 -- ================================================================
 -- AVATAR TAB
