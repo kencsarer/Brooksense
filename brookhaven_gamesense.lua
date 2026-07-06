@@ -973,40 +973,36 @@ Btn(tSk, "Copy Nearest Skin", function()
     if best then State.SkinTarget = best.Name end
 end, 3)
 
--- Fling
+-- Fling (FE Touch Fling - tested working method)
 TBox(tFl, "Fling target...", "FlingTarget", 1)
-Toggle(tFl, "Fling", "Fling", function(on)
+Toggle(tFl, "Fling (Touch)", "Fling", function(on)
     if on then
         task.spawn(function()
+            local movel = 0.1
             while State.Fling do
-                local t = FindPlayer(State.FlingTarget)
-                if t and t.Character then
-                    local tHRP = t.Character:FindFirstChild("HumanoidRootPart")
-                    if tHRP then
-                        -- Fling: teleport to target, set high velocity on SELF which physics transfers to them on collision
-                        HRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, -1)
-                        HRP.Velocity = Vector3.new(
-                            math.random(-1,1) * State.FlingPower,
-                            State.FlingPower * 0.5,
-                            math.random(-1,1) * State.FlingPower
-                        )
-                        -- Also directly set target velocity if we have network ownership
-                        pcall(function()
-                            tHRP.Velocity = Vector3.new(
-                                math.random(-1,1) * State.FlingPower,
-                                State.FlingPower,
-                                math.random(-1,1) * State.FlingPower
-                            )
-                        end)
-                        task.wait(0.15)
+                RunService.Heartbeat:Wait()
+                if HRP then
+                    -- First: teleport near target so we touch them
+                    local t = FindPlayer(State.FlingTarget)
+                    if t and t.Character then
+                        local tHRP = t.Character:FindFirstChild("HumanoidRootPart")
+                        if tHRP then
+                            HRP.CFrame = tHRP.CFrame * CFrame.new(0, 0, -1.5)
+                        end
                     end
+                    -- FE Fling: pump velocity sky high then restore
+                    local vel = HRP.Velocity
+                    HRP.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                    RunService.RenderStepped:Wait()
+                    HRP.Velocity = vel
+                    RunService.Stepped:Wait()
+                    HRP.Velocity = vel + Vector3.new(0, movel, 0)
+                    movel = -movel
                 end
-                task.wait(0.5)
             end
         end)
     end
 end, 2)
-Slider(tFl, "Fling Power", "FlingPower", 100, 2000, nil, 3)
 
 -- Annoy
 TBox(tAn, "Annoy target...", "AnnoyTarget", 1)
@@ -1043,9 +1039,53 @@ Toggle(tAn, "Face (TP front)", "AnnoyFront", function(on)
     end
 end, 3)
 
--- Misc Trolls
-Toggle(tM, "Attach (Ride Head)", "Attach", function(on)
+-- Misc Trolls (ALL FE compatible - others can see these)
+Toggle(tM, "Chat Spam", "ChatSpam", nil, 1)
+Toggle(tM, "Spin Self", "SpinSelf", nil, 2)
+Slider(tM, "Spin Speed", "SpinSelfSpeed", 1, 50, nil, 3)
+Toggle(tM, "Headless", "HeadlessTroll", function(on)
+    pcall(function()
+        local head = Char:FindFirstChild("Head")
+        if head then head.Transparency = on and 1 or 0 end
+        local face = head and head:FindFirstChildOfClass("Decal")
+        if face then face.Transparency = on and 1 or 0 end
+    end)
+end, 4)
+Toggle(tM, "Giant Self", "GiantSelf", function(on)
+    if on then State.TinySelf = false end
+    pcall(function()
+        for _, s in ipairs(Hum:GetChildren()) do
+            if s:IsA("NumberValue") and s.Name:find("Scale") then
+                s.Value = on and 3 or 1
+            end
+        end
+    end)
+end, 5)
+Toggle(tM, "Tiny Self", "TinySelf", function(on)
+    if on then State.GiantSelf = false end
+    pcall(function()
+        for _, s in ipairs(Hum:GetChildren()) do
+            if s:IsA("NumberValue") and s.Name:find("Scale") then
+                s.Value = on and 0.3 or 1
+            end
+        end
+    end)
+end, 6)
+Toggle(tM, "Sit/Jump Spam", "SpamEmotes", function(on)
     if on then
+        task.spawn(function()
+            while State.SpamEmotes do
+                pcall(function() Hum.Sit = true end)
+                task.wait(0.5)
+                pcall(function() Hum.Sit = false; Hum:ChangeState(Enum.HumanoidStateType.Jumping) end)
+                task.wait(0.5)
+            end
+        end)
+    end
+end, 7)
+Toggle(tM, "Attach (Head Ride)", "Attach", function(on)
+    if on then
+        Hum.PlatformStand = true
         task.spawn(function()
             while State.Attach do
                 local t = FindPlayer(State.AttachTarget)
@@ -1058,150 +1098,75 @@ Toggle(tM, "Attach (Ride Head)", "Attach", function(on)
                 end
                 task.wait(0.1)
             end
+            Hum.PlatformStand = false
         end)
-    end
-end, 1)
-TBox(tM, "Attach target...", "AttachTarget", 2)
-Toggle(tM, "Stalk (Walk to)", "Copycat", function(on)
-    if on then
-        task.spawn(function()
-            while State.Copycat do
-                local t = FindPlayer(State.CopycatTarget)
-                if t and t.Character then
-                    local tHRP = t.Character:FindFirstChild("HumanoidRootPart")
-                    if tHRP then
-                        local dist = (HRP.Position - tHRP.Position).Magnitude
-                        if dist > 5 then
-                            Hum:MoveTo(tHRP.Position)
-                        end
-                    end
-                end
-                task.wait(0.3)
-            end
-        end)
-    end
-end, 3)
-TBox(tM, "Copycat target...", "CopycatTarget", 4)
-Toggle(tM, "Disco Lights", "DiscoLights", function(on)
-    if on then
-        task.spawn(function()
-            while State.DiscoLights do
-                Lighting.Ambient = Color3.fromHSV(math.random(), 1, 1)
-                Lighting.OutdoorAmbient = Color3.fromHSV(math.random(), 1, 1)
-                Lighting.FogColor = Color3.fromHSV(math.random(), 0.5, 1)
-                task.wait(0.3)
-            end
-            -- Reset
-            Lighting.Ambient = Color3.fromRGB(128,128,128)
-            Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
-            Lighting.FogColor = Color3.fromRGB(192,192,192)
-        end)
-    end
-end, 5)
-Toggle(tM, "Spam Emotes", "SpamEmotes", function(on)
-    if on then
-        task.spawn(function()
-            while State.SpamEmotes do
-                pcall(function() Hum.Sit = true end)
-                task.wait(0.4)
-                pcall(function() Hum.Sit = false; Hum:ChangeState(Enum.HumanoidStateType.Jumping) end)
-                task.wait(0.4)
-            end
-        end)
-    end
-end, 6)
-Btn(tM, "Push Nearest", function()
-    local best, bd = nil, math.huge
-    for _, p in ipairs(GetPlayers()) do
-        if p.Character then
-            local r = p.Character:FindFirstChild("HumanoidRootPart")
-            if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = r end end
-        end
-    end
-    if best and bd < 15 then
-        pcall(function()
-            best.Velocity = (best.Position - HRP.Position).Unit * 150 + Vector3.new(0, 80, 0)
-        end)
-    end
-end, 7)
-Btn(tM, "Trap Nearest (Box)", function()
-    local best, bd = nil, math.huge
-    for _, p in ipairs(GetPlayers()) do
-        if p.Character then
-            local r = p.Character:FindFirstChild("HumanoidRootPart")
-            if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = r end end
-        end
-    end
-    if best then
-        local pos = best.Position
-        local walls = {
-            {CFrame.new(pos + Vector3.new(3,5,0)), Vector3.new(1,10,6)},
-            {CFrame.new(pos + Vector3.new(-3,5,0)), Vector3.new(1,10,6)},
-            {CFrame.new(pos + Vector3.new(0,5,3)), Vector3.new(6,10,1)},
-            {CFrame.new(pos + Vector3.new(0,5,-3)), Vector3.new(6,10,1)},
-            {CFrame.new(pos + Vector3.new(0,10,0)), Vector3.new(6,1,6)},
-        }
-        for _, w in ipairs(walls) do
-            local p = Instance.new("Part")
-            p.CFrame = w[1]; p.Size = w[2]
-            p.Anchored = true; p.Transparency = 0.5
-            p.BrickColor = BrickColor.new("Really black")
-            p.Name = "GS_Trap"
-            p.Parent = workspace
-        end
-        -- Auto remove after 8 seconds
-        task.spawn(function()
-            task.wait(8)
-            for _, obj in ipairs(workspace:GetChildren()) do
-                if obj.Name == "GS_Trap" then obj:Destroy() end
-            end
-        end)
+    else
+        Hum.PlatformStand = false
     end
 end, 8)
-Toggle(tM, "Invisible (local)", "Invisible", function(on)
-    if not Char then return end
-    for _, p in ipairs(Char:GetDescendants()) do
-        if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
-            p.LocalTransparencyModifier = on and 1 or 0
-        end
+TBox(tM, "Attach target...", "AttachTarget", 9)
+Toggle(tM, "Hat Orbit", "HatOrbit", function(on)
+    if on then
+        -- FE Hat Orbit: detach accessories and spin them around you
+        task.spawn(function()
+            local hats = {}
+            for _, v in ipairs(Hum:GetAccessories()) do
+                local h = v:FindFirstChild("Handle")
+                if h then
+                    h.CustomPhysicalProperties = PhysicalProperties.new(0,0,0,0,0)
+                    h.CanCollide = false
+                    h:BreakJoints()
+                    local bv = Instance.new("BodyPosition", h)
+                    bv.Name = "GS_HO"
+                    bv.MaxForce = Vector3.new(1e6,1e6,1e6)
+                    bv.D = 100; bv.P = 5000
+                    table.insert(hats, {part=h, bp=bv})
+                end
+            end
+            local angle = 0
+            while State.HatOrbit do
+                angle = angle + 0.08
+                for i, hat in ipairs(hats) do
+                    local a = angle + (i / #hats) * math.pi * 2
+                    hat.bp.Position = HRP.Position + Vector3.new(math.cos(a)*5, 2, math.sin(a)*5)
+                end
+                task.wait(0.03)
+            end
+            -- Cleanup
+            for _, hat in ipairs(hats) do
+                pcall(function() hat.bp:Destroy() end)
+            end
+        end)
     end
-end, 1)
-Toggle(tM, "Chat Spam", "ChatSpam", nil, 2)
-Toggle(tM, "Spin Self", "SpinSelf", nil, 3)
-Slider(tM, "Spin Speed", "SpinSelfSpeed", 1, 50, nil, 4)
-Toggle(tM, "Fake Lag", "FakeLag", nil, 5)
-Slider(tM, "Lag Amount (ms)", "FakeLagMs", 50, 500, nil, 6)
-Toggle(tM, "Black Hole", "BlackHole", nil, 7)
-Slider(tM, "BH Radius", "BHRadius", 10, 100, nil, 8)
-Toggle(tM, "Headless Troll", "HeadlessTroll", function(on)
+end, 10)
+Btn(tM, "Remove Limbs", function()
+    -- FE: destroy joints to make limbs fall off (others see it)
     pcall(function()
-        local head = Char:FindFirstChild("Head")
-        if head then head.Transparency = on and 1 or 0 end
-        local face = head and head:FindFirstChildOfClass("Decal")
-        if face then face.Transparency = on and 1 or 0 end
+        for _, v in ipairs(Char:GetDescendants()) do
+            if v:IsA("Motor6D") and v.Name ~= "Neck" and v.Name ~= "Root" then
+                v:Destroy()
+            end
+        end
     end)
 end, 11)
-Toggle(tM, "Giant Self", "GiantSelf", function(on)
-    if on then State.TinySelf = false end
+Btn(tM, "Ragdoll Self", function()
+    -- Break all joints for ragdoll effect
     pcall(function()
-        local scale = Hum:FindFirstChildOfClass("NumberValue") or Hum:FindFirstChild("BodyHeightScale") or Hum:FindFirstChild("HeadScale")
-        if not scale then return end
-        for _, s in ipairs(Hum:GetChildren()) do
-            if s:IsA("NumberValue") and s.Name:find("Scale") then
-                s.Value = on and 3 or 1
+        for _, v in ipairs(Char:GetDescendants()) do
+            if v:IsA("Motor6D") then
+                local s = Instance.new("BallSocketConstraint")
+                local a0 = Instance.new("Attachment", v.Part0)
+                local a1 = Instance.new("Attachment", v.Part1)
+                s.Attachment0 = a0; s.Attachment1 = a1
+                s.Parent = v.Part0
+                v:Destroy()
             end
         end
+        Hum.PlatformStand = true
     end)
 end, 12)
-Toggle(tM, "Tiny Self", "TinySelf", function(on)
-    if on then State.GiantSelf = false end
-    pcall(function()
-        for _, s in ipairs(Hum:GetChildren()) do
-            if s:IsA("NumberValue") and s.Name:find("Scale") then
-                s.Value = on and 0.3 or 1
-            end
-        end
-    end)
+Btn(tM, "Launch Self Up", function()
+    HRP.Velocity = Vector3.new(0, 300, 0)
 end, 13)
 
 -- Server Trolls
@@ -1508,14 +1473,8 @@ RunService.RenderStepped:Connect(function(dt)
         Hum:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 
-    -- Fake Lag (skip frames instead of blocking)
-    if State.FakeLag then
-        local now = tick()
-        if now - lastLagT < (State.FakeLagMs / 1000) then
-            return -- skip this frame entirely instead of blocking
-        end
-        lastLagT = tick()
-    end
+    -- Fake Lag (skip rendering briefly to simulate lag for others)
+    -- Removed: was causing crashes and conflicts. FakeLag is not reliable client-side.
 end)
 
 -- SINGLE Heartbeat (less frequent tasks)
