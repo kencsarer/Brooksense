@@ -1190,12 +1190,11 @@ RunService.RenderStepped:Connect(function(dt)
         Hum:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 
-    -- Fake Lag
+    -- Fake Lag (skip frames instead of blocking)
     if State.FakeLag then
         local now = tick()
         if now - lastLagT < (State.FakeLagMs / 1000) then
-            local deadline = now + (State.FakeLagMs / 1000) * 0.3
-            while tick() < deadline do end
+            return -- skip this frame entirely instead of blocking
         end
         lastLagT = tick()
     end
@@ -1207,12 +1206,15 @@ RunService.Heartbeat:Connect(function(dt)
     if not Char or not HRP then return end
     hbTick = hbTick + dt
 
-    if State.BlackHole and hbTick > 0.15 then
+    if State.BlackHole and hbTick > 0.3 then
+        local count = 0
         for _, obj in ipairs(workspace:GetDescendants()) do
+            if count > 50 then break end -- max 50 object per tick
             if obj:IsA("BasePart") and not obj.Anchored and obj.Name ~= "HumanoidRootPart" then
                 local dist = (obj.Position - HRP.Position).Magnitude
                 if dist < State.BHRadius and dist > 1 then
                     pcall(function() obj.Velocity = (HRP.Position - obj.Position).Unit * (30/dist) end)
+                    count = count + 1
                 end
             end
         end
