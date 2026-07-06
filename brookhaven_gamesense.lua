@@ -1246,6 +1246,84 @@ Btn(tSrv, "Freeze All", function()
         pcall(function() r:FireServer("DropButtonStopAll", p) end)
     end
 end, 6)
+Btn(tSrv, "Lag: Sound Flood", function()
+    task.spawn(function()
+        for i = 1, 50 do
+            local s = Instance.new("Sound", workspace)
+            s.SoundId = "rbxassetid://9114232807"
+            s.Volume = 0; s.Looped = true; s:Play()
+        end
+    end)
+end, 7)
+Btn(tSrv, "Lag: Part Spam", function()
+    task.spawn(function()
+        for i = 1, 100 do
+            local p = Instance.new("Part")
+            p.Size = Vector3.new(2,2,2)
+            p.Position = HRP.Position + Vector3.new(math.random(-10,10), 20, math.random(-10,10))
+            p.Anchored = false; p.CanCollide = true
+            p.Parent = workspace
+            if i % 10 == 0 then task.wait(0.05) end
+        end
+    end)
+end, 8)
+Btn(tSrv, "Lag: Remote Flood", function()
+    task.spawn(function()
+        local remotes = {}
+        for _, v in ipairs(game:GetDescendants()) do
+            if v:IsA("RemoteEvent") then table.insert(remotes, v) end
+        end
+        for round = 1, 5 do
+            for _, r in ipairs(remotes) do
+                pcall(function() r:FireServer(string.rep("x", 200)) end)
+            end
+            task.wait(0.1)
+        end
+    end)
+end, 9)
+Btn(tSrv, "Lag: Particle Spam", function()
+    task.spawn(function()
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and math.random() > 0.7 then
+                local pe = Instance.new("ParticleEmitter")
+                pe.Rate = 500; pe.Lifetime = NumberRange.new(5)
+                pe.Speed = NumberRange.new(20)
+                pe.Name = "GS_Lag"
+                pe.Parent = obj
+            end
+        end
+        -- Auto clean after 10s
+        task.wait(10)
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj.Name == "GS_Lag" then obj:Destroy() end
+        end
+    end)
+end, 10)
+Btn(tSrv, "Lag: Network Spam", function()
+    task.spawn(function()
+        pcall(function()
+            local rem = game:GetService("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList")
+            if rem then
+                local bigData = {}
+                for i = 1, 300 do table.insert(bigData, {string.rep("a", 200)}) end
+                for i = 1, 15 do
+                    pcall(function() rem:FireServer(bigData) end)
+                    task.wait(0.05)
+                end
+            end
+        end)
+    end)
+end, 11)
+Btn(tSrv, "Stop Lag Effects", function()
+    -- Clean up all lag stuff
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj.Name == "GS_Lag" then obj:Destroy() end
+        if obj:IsA("Sound") and obj.SoundId == "rbxassetid://9114232807" then obj:Destroy() end
+    end
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("Part") and not obj.Anchored and obj.Size == Vector3.new(2,2,2) then obj:Destroy() end
+    end
+end, 12)
 
 -- ================================================================
 -- AVATAR TAB
