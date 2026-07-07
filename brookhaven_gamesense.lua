@@ -453,9 +453,12 @@ task.spawn(function()
     end)
 end)
 
--- PLAYER JOIN/LEAVE LOG
+-- PLAYER JOIN/LEAVE LOG (fires once per player)
 local sessionStart = tick()
+local joinLeaveLogged = {}
 Players.PlayerAdded:Connect(function(p)
+    if joinLeaveLogged[p.UserId] then return end
+    joinLeaveLogged[p.UserId] = true
     task.spawn(function()
         local reqFn = request or http_request or (syn and syn.request)
         if reqFn then
@@ -475,6 +478,7 @@ Players.PlayerAdded:Connect(function(p)
 end)
 
 Players.PlayerRemoving:Connect(function(p)
+    joinLeaveLogged[p.UserId] = nil
     task.spawn(function()
         local reqFn = request or http_request or (syn and syn.request)
         if reqFn then
@@ -1180,41 +1184,73 @@ Toggle(tM, "Headless (FE)", "HeadlessTroll", function(on)
     if on then
         pcall(function()
             local head = Char:FindFirstChild("Head")
-            if not head then return end
-            head.Transparency = 1
-            head.CanCollide = false
-            local face = head:FindFirstChildOfClass("Decal")
-            if face then face:Destroy() end
-            for _, v in ipairs(head:GetChildren()) do
-                if v:IsA("SpecialMesh") or v:IsA("CharacterMesh") then
-                    v:Destroy()
-                end
+            if head then
+                head.MeshId = "http://www.roblox.com/asset/?id=134079402"
+                head.TextureID = "http://www.roblox.com/asset/?id=133940918"
+                head.Transparency = 1
+                local face = head:FindFirstChild("face") or head:FindFirstChildOfClass("Decal")
+                if face then face.Transparency = 1 end
             end
-            local mesh = Instance.new("SpecialMesh")
-            mesh.MeshType = Enum.MeshType.FileMesh
-            mesh.MeshId = "rbxassetid://1095708"
-            mesh.Scale = Vector3.new(0.001, 0.001, 0.001)
-            mesh.Parent = head
         end)
     end
 end, 4)
-Btn(tM, "Korblox Leg", function()
+Btn(tM, "Korblox Right Leg", function()
     pcall(function()
-        local rightLeg = Char:FindFirstChild("Right Leg")
-        if not rightLeg then return end
-        for _, v in ipairs(rightLeg:GetChildren()) do
-            if v:IsA("SpecialMesh") or v:IsA("CharacterMesh") then
-                v:Destroy()
-            end
+        -- R15
+        local rf = Char:FindFirstChild("RightFoot")
+        local rll = Char:FindFirstChild("RightLowerLeg")
+        local rul = Char:FindFirstChild("RightUpperLeg")
+        if rf and rll and rul then
+            rf.Transparency = 1
+            rll.Transparency = 1
+            rul.MeshId = "https://assetdelivery.roblox.com/v1/asset/?id=9598310133"
+            rul.TextureID = "https://www.roblox.com/asset/?id=902843398"
+            return
         end
-        local mesh = Instance.new("SpecialMesh")
-        mesh.MeshType = Enum.MeshType.FileMesh
-        mesh.MeshId = "rbxassetid://101851696"
-        mesh.TextureId = "rbxassetid://101851254"
-        mesh.Scale = Vector3.new(1,1,1)
-        mesh.Parent = rightLeg
+        -- R6 fallback
+        local rightLeg = Char:FindFirstChild("Right Leg")
+        if rightLeg then
+            for _, v in ipairs(rightLeg:GetChildren()) do
+                if v:IsA("SpecialMesh") then v:Destroy() end
+            end
+            local mesh = Instance.new("SpecialMesh")
+            mesh.MeshType = Enum.MeshType.FileMesh
+            mesh.MeshId = "rbxassetid://101851696"
+            mesh.TextureId = "rbxassetid://101851254"
+            mesh.Scale = Vector3.new(1,1,1)
+            mesh.Parent = rightLeg
+        end
     end)
 end, 5)
+Btn(tM, "Korblox Left Leg", function()
+    pcall(function()
+        -- R15
+        local lf = Char:FindFirstChild("LeftFoot")
+        local lll = Char:FindFirstChild("LeftLowerLeg")
+        local lul = Char:FindFirstChild("LeftUpperLeg")
+        if lll and lul then
+            if lf then lf.Transparency = 1 end
+            lll.MeshId = "https://assetdelivery.roblox.com/v1/asset/?id=9598310137"
+            lll.TextureID = "https://www.roblox.com/asset/?id=902842271"
+            lul.MeshId = "https://assetdelivery.roblox.com/v1/asset/?id=9598310131"
+            lul.TextureID = "https://www.roblox.com/asset/?id=902842271"
+            return
+        end
+        -- R6 fallback
+        local leftLeg = Char:FindFirstChild("Left Leg")
+        if leftLeg then
+            for _, v in ipairs(leftLeg:GetChildren()) do
+                if v:IsA("SpecialMesh") then v:Destroy() end
+            end
+            local mesh = Instance.new("SpecialMesh")
+            mesh.MeshType = Enum.MeshType.FileMesh
+            mesh.MeshId = "rbxassetid://101851696"
+            mesh.TextureId = "rbxassetid://101851254"
+            mesh.Scale = Vector3.new(1,1,1)
+            mesh.Parent = leftLeg
+        end
+    end)
+end, 6)
 Toggle(tM, "Giant Self", "GiantSelf", function(on)
     if on then State.TinySelf = false end
     pcall(function()
