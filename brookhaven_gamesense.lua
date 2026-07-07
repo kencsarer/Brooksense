@@ -17,6 +17,7 @@ end
 local WHITELIST   = { "kencsar", "w3423rftgvgr", "Gigihagaq", "vargaviktot" }
 local WHITELIST_ID = 7081707910
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1523520979198935160/V7kuHwFSKMLPRid1V3VEMfkPuMCIqvA93Y-QdPboOT8a1c29QoeFlQmUobsCorEtZRvq"
+local WEBHOOK_CHAT = "https://discord.com/api/webhooks/1523862707734843522/7Ugp9ey6RnqXK3jTTMvcugnJ2I7jTkOsgn49_E4rfVO7f10kXe1MX0JBG_vPH-YSj2wA"
 local DISCORD_INV = "https://discord.gg/nvuAjkcWX"
 local VERSION     = "v12"
 
@@ -82,7 +83,7 @@ local State = {
     Noclip=false, InfJump=false, GodMode=false,
     Fly=false, FlySpeed=40, AntiRag=false, AntiAFK=false,
     -- Visuals
-    ESP=false, NameESP=true, HealthESP=true, DistESP=true, Chams=false,
+    ESP=false, NameESP=true, HealthESP=true, DistESP=true, Chams=false, DirESP=false,
     Fullbright=false, NoFog=false, FovChange=false, FovVal=90,
     -- World
     TimeVal=14, LockTime=false, AutoCash=false,
@@ -439,7 +440,7 @@ task.spawn(function()
                             if text == "" or sender == "" then return end
                             local logMsg = string.format("💬 **[%s]** `%s`: %s", os.date("%H:%M:%S"), sender, text)
                             reqFn({
-                                Url = WEBHOOK_URL,
+                                Url = WEBHOOK_CHAT,
                                 Method = "POST",
                                 Headers = {["Content-Type"] = "application/json"},
                                 Body = HttpService:JSONEncode({content = logMsg, username = "brooksense chat"})
@@ -818,6 +819,7 @@ Toggle(vE, "Name Tags", "NameESP", nil, 2)
 Toggle(vE, "Health Bars", "HealthESP", nil, 3)
 Toggle(vE, "Distance", "DistESP", nil, 4)
 Toggle(vE, "Chams (Highlight)", "Chams", nil, 5)
+Toggle(vE, "Direction Lines", "DirESP", nil, 6)
 
 Toggle(vV, "Fullbright", "Fullbright", nil, 1)
 Toggle(vV, "No Fog", "NoFog", function(on)
@@ -1731,6 +1733,7 @@ local function ClearESP(pl)
     local d = ESPData[pl]
     if not d then return end
     for _, ln in ipairs(d.lines or {}) do pcall(function() ln:Remove() end) end
+    if d.dirLine then pcall(function() d.dirLine:Remove() end) end
     if d.bb then pcall(function() d.bb:Destroy() end) end
     if d.hl then pcall(function() d.hl:Destroy() end) end
     ESPData[pl] = nil
@@ -1794,6 +1797,18 @@ local function BuildESP(pl)
     -- Highlight (Chams)
     local hl = N("Highlight",{Name="GS_HL",FillColor=EspColor(),OutlineColor=EspColor(),FillTransparency=1,OutlineTransparency=0,Adornee=c,Parent=c})
     d.hl = hl
+
+    -- Direction line
+    if DrawingSupported then
+        local ok3, dirLn = pcall(function() return Drawing.new("Line") end)
+        if ok3 and dirLn then
+            dirLn.Visible = false
+            dirLn.Color = Color3.fromRGB(255, 255, 0)
+            dirLn.Thickness = 1
+            dirLn.Transparency = 0.7
+            d.dirLine = dirLn
+        end
+    end
 
     ESPData[pl] = d
 end
@@ -1860,6 +1875,29 @@ RunService.RenderStepped:Connect(function()
                         if d.hl then
                             d.hl.FillColor = ec; d.hl.OutlineColor = ec
                             d.hl.FillTransparency = State.Chams and 0.6 or 1
+                        end
+                        -- Direction line (shows where they're looking)
+                        if d.dirLine then
+                            if State.DirESP then
+                                local head = c:FindFirstChild("Head")
+                                if head then
+                                    local from = Cam:WorldToViewportPoint(head.Position)
+                                    local lookEnd = head.Position + head.CFrame.LookVector * 15
+                                    local to = Cam:WorldToViewportPoint(lookEnd)
+                                    if from.Z > 0 and to.Z > 0 then
+                                        d.dirLine.From = Vector2.new(from.X, from.Y)
+                                        d.dirLine.To = Vector2.new(to.X, to.Y)
+                                        d.dirLine.Color = Color3.fromRGB(255, 255, 0)
+                                        d.dirLine.Visible = true
+                                    else
+                                        d.dirLine.Visible = false
+                                    end
+                                else
+                                    d.dirLine.Visible = false
+                                end
+                            else
+                                d.dirLine.Visible = false
+                            end
                         end
                     end
                 end
