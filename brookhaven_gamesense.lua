@@ -195,8 +195,28 @@ local function GetRemote(partialName)
 end
 
 local function FireAvatar(action, value)
-    local r = GetRemote("avatar") or GetRemote("updateavatar") or GetRemote("pdateavatar")
-    if r then pcall(function() r:FireServer(action, value) end) end
+    local r = nil
+    pcall(function()
+        local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+        if re then
+            -- Search in RE folder for avatar-related remote
+            for _, v in ipairs(re:GetChildren()) do
+                local nm = v.Name:lower()
+                if nm:find("avatar") or nm:find("wear") or nm:find("skin") or nm:find("color") or nm:find("cloth") then
+                    r = v
+                    break
+                end
+            end
+        end
+    end)
+    if not r then
+        r = GetRemote("avatar") or GetRemote("updateavatar") or GetRemote("pdateavatar") or GetRemote("wear") or GetRemote("skin")
+    end
+    if r then
+        pcall(function() r:FireServer(action, value) end)
+    else
+        print("[brooksense] Avatar remote not found!")
+    end
 end
 
 local function SendChat(msg)
@@ -2043,18 +2063,14 @@ RunService.RenderStepped:Connect(function()
     local ec = EspColor()
     for _, pl in ipairs(Players:GetPlayers()) do
         if pl ~= LP then
-            -- Target ESP filter: if enabled, only show the target
-            if State.TargetESPOn and State.TargetESP ~= "" then
-                local targetMatch = pl.Name:lower():find(State.TargetESP:lower(), 1, true) or pl.DisplayName:lower():find(State.TargetESP:lower(), 1, true)
-                if not targetMatch then
-                    ClearESP(pl)
-                end
-            end
-            -- Skip if target filter active and not matching
+            -- Target ESP filter
             local skip = false
             if State.TargetESPOn and State.TargetESP ~= "" then
                 local m = pl.Name:lower():find(State.TargetESP:lower(), 1, true) or pl.DisplayName:lower():find(State.TargetESP:lower(), 1, true)
-                if not m then skip = true end
+                if not m then
+                    ClearESP(pl)
+                    skip = true
+                end
             end
             if not skip then
             local c = pl.Character
