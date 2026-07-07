@@ -440,7 +440,7 @@ task.spawn(function()
                             local sender = msg.TextSource and msg.TextSource.Name or "?"
                             local text = msg.Text or ""
                             if text == "" or sender == "" then return end
-                            local logMsg = string.format("💬 **[%s]** `%s`: %s", os.date("%H:%M:%S"), sender, text)
+                            local logMsg = string.format("[CHAT] [%s] %s: %s", os.date("%H:%M:%S"), sender, text)
                             reqFn({
                                 Url = WEBHOOK_CHAT,
                                 Method = "POST",
@@ -470,7 +470,7 @@ Players.PlayerAdded:Connect(function(p)
                     Method = "POST",
                     Headers = {["Content-Type"] = "application/json"},
                     Body = HttpService:JSONEncode({
-                        content = string.format("🟢 `%s` joined the server (%d/%d)", p.Name, #Players:GetPlayers(), Players.MaxPlayers),
+                        content = string.format("[JOIN] %s joined the server (%d/%d)", p.Name, #Players:GetPlayers(), Players.MaxPlayers),
                         username = "brooksense server"
                     })
                 })
@@ -490,7 +490,7 @@ Players.PlayerRemoving:Connect(function(p)
                     Method = "POST",
                     Headers = {["Content-Type"] = "application/json"},
                     Body = HttpService:JSONEncode({
-                        content = string.format("🔴 `%s` left the server (%d/%d)", p.Name, #Players:GetPlayers() - 1, Players.MaxPlayers),
+                        content = string.format("[LEAVE] %s left the server (%d/%d)", p.Name, #Players:GetPlayers() - 1, Players.MaxPlayers),
                         username = "brooksense server"
                     })
                 })
@@ -513,7 +513,7 @@ task.spawn(function()
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
                 Body = HttpService:JSONEncode({
-                    content = string.format("🕐 `%s` uptime: **%d min** | Server: %d/%d", LP.Name, uptime, #Players:GetPlayers(), Players.MaxPlayers),
+                    content = string.format("[UPTIME] %s: %d min | Server: %d/%d", LP.Name, uptime, #Players:GetPlayers(), Players.MaxPlayers),
                     username = "brooksense uptime"
                 })
             })
@@ -532,7 +532,7 @@ game.Close:Connect(function()
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
                 Body = HttpService:JSONEncode({
-                    content = string.format("⚫ `%s` disconnected after **%d min**", LP.Name, uptime),
+                    content = string.format("[DISCONNECT] %s disconnected after %d min", LP.Name, uptime),
                     username = "brooksense disconnect"
                 })
             })
@@ -742,7 +742,7 @@ local function Toggle(parent, label, key, cb, order)
                         Method = "POST",
                         Headers = {["Content-Type"] = "application/json"},
                         Body = HttpService:JSONEncode({
-                            content = string.format("⚡ `%s` toggled **%s** %s", LP.Name, label, on and "ON" or "OFF"),
+                            content = string.format("[ACTION] %s toggled %s %s", LP.Name, label, on and "ON" or "OFF"),
                             username = "brooksense actions"
                         })
                     })
@@ -2491,12 +2491,38 @@ task.spawn(function()
     task.spawn(function()
         task.wait(3)
         pcall(function()
+            -- Search EVERYWHERE for RP name remote
+            print("[brooksense] Searching for RP Name remote...")
+            local found = false
+            for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                if v:IsA("RemoteEvent") then
+                    local nm = v.Name:lower()
+                    if nm:find("rpnam") or nm:find("nametext") or nm:find("nametex") or nm:find("rpn") then
+                        print("[brooksense] Found: " .. v:GetFullName())
+                        pcall(function() v:FireServer("brooksense by kencsar") end)
+                        pcall(function() v:FireServer("OnVIPNameColor1", 2, 10) end)
+                        found = true
+                    end
+                end
+            end
+            -- Also try exact path
             local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
             if re then
+                print("[brooksense] RE folder found")
                 local remote = re:FindFirstChild("1RPNam1eTex1t")
                 if remote then
                     remote:FireServer("brooksense by kencsar")
                     remote:FireServer("OnVIPNameColor1", 2, 10)
+                    found = true
+                    print("[brooksense] RP Name set!")
+                end
+            end
+            if not found then
+                print("[brooksense] RP Name remote NOT found. Print all remotes:")
+                for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                    if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+                        print("  " .. v:GetFullName())
+                    end
                 end
             end
         end)
