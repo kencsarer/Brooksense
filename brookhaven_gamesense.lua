@@ -623,23 +623,23 @@ N("TextLabel",{
     TextXAlignment=Enum.TextXAlignment.Right, Parent=TBar
 })
 
--- MINIMIZE BUTTON
+-- MINIMIZE BUTTON (yellow circle)
 local HBtn = N("TextButton",{
-    AnchorPoint=Vector2.new(1,0.5), Size=UDim2.new(0,22,0,18),
-    Position=UDim2.new(1,-28,0.5,0), BackgroundColor3=Color3.fromRGB(200,160,0),
-    BorderSizePixel=0, Text="-", Font=Enum.Font.GothamBold, TextSize=16,
+    AnchorPoint=Vector2.new(1,0.5), Size=UDim2.new(0,18,0,18),
+    Position=UDim2.new(1,-26,0.5,0), BackgroundColor3=Color3.fromRGB(200,160,0),
+    BorderSizePixel=0, Text="", Font=Enum.Font.GothamBold, TextSize=16,
     TextColor3=Color3.new(1,1,1), AutoButtonColor=false, Parent=TBar
 })
-RND(3, HBtn)
+RND(9, HBtn)
 
--- CLOSE BUTTON
+-- CLOSE BUTTON (red circle)
 local XBtn = N("TextButton",{
-    AnchorPoint=Vector2.new(1,0.5), Size=UDim2.new(0,22,0,18),
-    Position=UDim2.new(1,-3,0.5,0), BackgroundColor3=C.Red, BorderSizePixel=0,
-    Text="X", Font=Enum.Font.GothamBold, TextSize=12,
+    AnchorPoint=Vector2.new(1,0.5), Size=UDim2.new(0,18,0,18),
+    Position=UDim2.new(1,-5,0.5,0), BackgroundColor3=Color3.fromRGB(200,55,55),
+    BorderSizePixel=0, Text="", Font=Enum.Font.GothamBold, TextSize=12,
     TextColor3=Color3.new(1,1,1), AutoButtonColor=false, Parent=TBar
 })
-RND(3, XBtn)
+RND(9, XBtn)
 
 N("Frame",{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=C.Sep,BorderSizePixel=0,Parent=TBar})
 
