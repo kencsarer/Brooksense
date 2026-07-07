@@ -83,7 +83,7 @@ local State = {
     Noclip=false, InfJump=false, GodMode=false,
     Fly=false, FlySpeed=40, AntiRag=false, AntiAFK=false,
     -- Visuals
-    ESP=false, NameESP=true, HealthESP=true, DistESP=true, Chams=false, DirESP=false,
+    ESP=false, NameESP=true, HealthESP=true, DistESP=true, Chams=false, DirESP=false, TargetESP="", TargetESPOn=false,
     Fullbright=false, NoFog=false, FovChange=false, FovVal=90,
     -- World
     TimeVal=14, LockTime=false, AutoCash=false,
@@ -932,6 +932,8 @@ Toggle(vE, "Health Bars", "HealthESP", nil, 3)
 Toggle(vE, "Distance", "DistESP", nil, 4)
 Toggle(vE, "Chams (Highlight)", "Chams", nil, 5)
 Toggle(vE, "Direction Lines", "DirESP", nil, 6)
+TBox(vE, "Target ESP name...", "TargetESP", 7)
+Toggle(vE, "Target ESP Only", "TargetESPOn", nil, 8)
 
 Toggle(vV, "Fullbright", "Fullbright", nil, 1)
 Toggle(vV, "No Fog", "NoFog", function(on)
@@ -1177,23 +1179,42 @@ Slider(tM, "Spin Speed", "SpinSelfSpeed", 1, 50, nil, 3)
 Toggle(tM, "Headless (FE)", "HeadlessTroll", function(on)
     if on then
         pcall(function()
-            -- Destroy ALL neck joints (works on R6 and R15)
-            for _, v in ipairs(Char:GetDescendants()) do
-                if v:IsA("Motor6D") and (v.Name == "Neck" or v.Part1 == Char:FindFirstChild("Head")) then
+            local head = Char:FindFirstChild("Head")
+            if not head then return end
+            head.Transparency = 1
+            head.CanCollide = false
+            local face = head:FindFirstChildOfClass("Decal")
+            if face then face:Destroy() end
+            for _, v in ipairs(head:GetChildren()) do
+                if v:IsA("SpecialMesh") or v:IsA("CharacterMesh") then
                     v:Destroy()
                 end
             end
-            -- Also make head invisible + no collision
-            local head = Char:FindFirstChild("Head")
-            if head then
-                head.Transparency = 1
-                head.CanCollide = false
-                local face = head:FindFirstChildOfClass("Decal")
-                if face then face.Transparency = 1 end
-            end
+            local mesh = Instance.new("SpecialMesh")
+            mesh.MeshType = Enum.MeshType.FileMesh
+            mesh.MeshId = "rbxassetid://1095708"
+            mesh.Scale = Vector3.new(0.001, 0.001, 0.001)
+            mesh.Parent = head
         end)
     end
 end, 4)
+Btn(tM, "Korblox Leg", function()
+    pcall(function()
+        local rightLeg = Char:FindFirstChild("Right Leg")
+        if not rightLeg then return end
+        for _, v in ipairs(rightLeg:GetChildren()) do
+            if v:IsA("SpecialMesh") or v:IsA("CharacterMesh") then
+                v:Destroy()
+            end
+        end
+        local mesh = Instance.new("SpecialMesh")
+        mesh.MeshType = Enum.MeshType.FileMesh
+        mesh.MeshId = "rbxassetid://101851696"
+        mesh.TextureId = "rbxassetid://101851254"
+        mesh.Scale = Vector3.new(1,1,1)
+        mesh.Parent = rightLeg
+    end)
+end, 5)
 Toggle(tM, "Giant Self", "GiantSelf", function(on)
     if on then State.TinySelf = false end
     pcall(function()
@@ -1934,6 +1955,20 @@ RunService.RenderStepped:Connect(function()
     local ec = EspColor()
     for _, pl in ipairs(Players:GetPlayers()) do
         if pl ~= LP then
+            -- Target ESP filter: if enabled, only show the target
+            if State.TargetESPOn and State.TargetESP ~= "" then
+                local targetMatch = pl.Name:lower():find(State.TargetESP:lower(), 1, true) or pl.DisplayName:lower():find(State.TargetESP:lower(), 1, true)
+                if not targetMatch then
+                    ClearESP(pl)
+                end
+            end
+            -- Skip if target filter active and not matching
+            local skip = false
+            if State.TargetESPOn and State.TargetESP ~= "" then
+                local m = pl.Name:lower():find(State.TargetESP:lower(), 1, true) or pl.DisplayName:lower():find(State.TargetESP:lower(), 1, true)
+                if not m then skip = true end
+            end
+            if not skip then
             local c = pl.Character
             if not c then
                 ClearESP(pl)
@@ -2013,6 +2048,7 @@ RunService.RenderStepped:Connect(function()
                         end
                     end
                 end
+            end
             end
         end
     end
