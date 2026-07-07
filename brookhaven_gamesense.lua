@@ -453,6 +453,89 @@ task.spawn(function()
     end)
 end)
 
+-- PLAYER JOIN/LEAVE LOG
+local sessionStart = tick()
+Players.PlayerAdded:Connect(function(p)
+    task.spawn(function()
+        local reqFn = request or http_request or (syn and syn.request)
+        if reqFn then
+            pcall(function()
+                reqFn({
+                    Url = WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode({
+                        content = string.format("🟢 `%s` joined the server (%d/%d)", p.Name, #Players:GetPlayers(), Players.MaxPlayers),
+                        username = "brooksense server"
+                    })
+                })
+            end)
+        end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+    task.spawn(function()
+        local reqFn = request or http_request or (syn and syn.request)
+        if reqFn then
+            pcall(function()
+                reqFn({
+                    Url = WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode({
+                        content = string.format("🔴 `%s` left the server (%d/%d)", p.Name, #Players:GetPlayers() - 1, Players.MaxPlayers),
+                        username = "brooksense server"
+                    })
+                })
+            end)
+        end
+    end)
+end)
+
+-- UPTIME LOG (every 5 minutes)
+task.spawn(function()
+    task.wait(10)
+    local reqFn = request or http_request or (syn and syn.request)
+    if not reqFn then return end
+    while true do
+        task.wait(300)
+        local uptime = math.floor((tick() - sessionStart) / 60)
+        pcall(function()
+            reqFn({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({
+                    content = string.format("🕐 `%s` uptime: **%d min** | Server: %d/%d", LP.Name, uptime, #Players:GetPlayers(), Players.MaxPlayers),
+                    username = "brooksense uptime"
+                })
+            })
+        end)
+    end
+end)
+
+-- DISCONNECT LOG (fires when player leaves)
+game:GetService("CoreGui").ChildAdded:Connect(function()
+    task.spawn(function()
+        local uptime = math.floor((tick() - sessionStart) / 60)
+        local reqFn = request or http_request or (syn and syn.request)
+        if reqFn then
+            pcall(function()
+                reqFn({
+                    Url = WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode({
+                        content = string.format("⚫ `%s` disconnected after **%d min**", LP.Name, uptime),
+                        username = "brooksense disconnect"
+                    })
+                })
+            end)
+        end
+    end)
+end)
+
 -- CHARACTER RESPAWN HANDLER
 LP.CharacterAdded:Connect(function(c)
     RefChar(c)
