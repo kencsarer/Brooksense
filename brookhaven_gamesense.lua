@@ -515,25 +515,23 @@ task.spawn(function()
     end
 end)
 
--- DISCONNECT LOG (fires when player leaves)
-game:GetService("CoreGui").ChildAdded:Connect(function()
-    task.spawn(function()
-        local uptime = math.floor((tick() - sessionStart) / 60)
-        local reqFn = request or http_request or (syn and syn.request)
-        if reqFn then
-            pcall(function()
-                reqFn({
-                    Url = WEBHOOK_URL,
-                    Method = "POST",
-                    Headers = {["Content-Type"] = "application/json"},
-                    Body = HttpService:JSONEncode({
-                        content = string.format("⚫ `%s` disconnected after **%d min**", LP.Name, uptime),
-                        username = "brooksense disconnect"
-                    })
+-- DISCONNECT LOG (fires once when game closes)
+game.Close:Connect(function()
+    local uptime = math.floor((tick() - sessionStart) / 60)
+    local reqFn = request or http_request or (syn and syn.request)
+    if reqFn then
+        pcall(function()
+            reqFn({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({
+                    content = string.format("⚫ `%s` disconnected after **%d min**", LP.Name, uptime),
+                    username = "brooksense disconnect"
                 })
-            end)
-        end
-    end)
+            })
+        end)
+    end
 end)
 
 -- CHARACTER RESPAWN HANDLER
