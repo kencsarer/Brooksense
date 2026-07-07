@@ -19,7 +19,7 @@ local WHITELIST_ID = 7081707910
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1523520979198935160/V7kuHwFSKMLPRid1V3VEMfkPuMCIqvA93Y-QdPboOT8a1c29QoeFlQmUobsCorEtZRvq"
 local WEBHOOK_CHAT = "https://discord.com/api/webhooks/1523862707734843522/7Ugp9ey6RnqXK3jTTMvcugnJ2I7jTkOsgn49_E4rfVO7f10kXe1MX0JBG_vPH-YSj2wA"
 local DISCORD_INV = "https://discord.gg/nvuAjkcWX"
-local VERSION     = "v12"
+local VERSION     = "v2"
 
 -- SERVICES
 local Players         = game:GetService("Players")
@@ -88,7 +88,7 @@ local State = {
     -- World
     TimeVal=14, LockTime=false, AutoCash=false,
     -- Troll
-    NeckFloat=false, NeckTarget="",
+    NeckFloat=false, NeckTarget="", RPNameText="", RainbowName=false,
     SpinPlayer=false, SpinTarget="", SpinSpeed=4, SpinRadius=4,
     Invisible=false, FakeLag=false, FakeLagMs=120,
     ChatSpam=false, SpamMsg="brooksense | best brookhaven script",
@@ -107,8 +107,10 @@ local State = {
     SkinTarget="",
     RainbowSkin=false, RainbowCar=false,
     HatId="",
+    CustomEmoteId="",
     -- Misc
     ServerHop=false,
+    SpectateTarget="",
     -- Settings
     EspR=100, EspG=200, EspB=255,
     AccR=200, AccG=55, AccB=200,
@@ -1041,11 +1043,55 @@ local tAn  = GB(TabPages["Troll"], "Annoy", 5)
 local tM   = GB(TabPages["Troll"], "Misc Trolls", 6)
 local tSrv = GB(TabPages["Troll"], "Server Trolls", 7)
 
+-- RP Name (server-side, visible to all)
+TBox(tNF, "RP Name...", "RPNameText", 1)
+Btn(tNF, "Set RP Name", function()
+    local name = State.RPNameText or ""
+    if name == "" then name = "brooksense by kencsar" end
+    pcall(function()
+        local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+        if re then
+            local remote = re:FindFirstChild("1RPNam1eTex1t")
+            if remote then
+                remote:FireServer(name)
+                remote:FireServer("OnVIPNameColor1", 2, 10)
+            end
+        end
+    end)
+    pcall(function()
+        local r = GetRemote("rpnam") or GetRemote("nametext") or GetRemote("nametex")
+        if r then
+            r:FireServer(name)
+        end
+    end)
+end, 2)
+Toggle(tNF, "Rainbow Name", "RainbowName", function(on)
+    if on then
+        task.spawn(function()
+            local colorIndex = 1
+            while State.RainbowName do
+                pcall(function()
+                    local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+                    if re then
+                        local remote = re:FindFirstChild("1RPNam1eTex1t")
+                        if remote then
+                            remote:FireServer("OnVIPNameColor1", colorIndex, 10)
+                        end
+                    end
+                end)
+                colorIndex = colorIndex + 1
+                if colorIndex > 10 then colorIndex = 1 end
+                task.wait(0.5)
+            end
+        end)
+    end
+end, 2.5)
+
 -- Neck Float
-TBox(tNF, "Target username...", "NeckTarget", 1)
+TBox(tNF, "Target username...", "NeckTarget", 3)
 Toggle(tNF, "Neck Float", "NeckFloat", function(on)
     Hum.PlatformStand = on
-end, 2)
+end, 4)
 
 -- Orbit
 TBox(tOrb, "Target username...", "SpinTarget", 1)
@@ -1182,14 +1228,25 @@ Toggle(tM, "Spin Self", "SpinSelf", nil, 2)
 Slider(tM, "Spin Speed", "SpinSelfSpeed", 1, 50, nil, 3)
 Toggle(tM, "Headless (FE)", "HeadlessTroll", function(on)
     if on then
-        pcall(function()
-            local head = Char:FindFirstChild("Head")
-            if head then
-                head.MeshId = "http://www.roblox.com/asset/?id=134079402"
-                head.TextureID = "http://www.roblox.com/asset/?id=133940918"
-                head.Transparency = 1
-                local face = head:FindFirstChild("face") or head:FindFirstChildOfClass("Decal")
-                if face then face.Transparency = 1 end
+        local function applyHeadless()
+            pcall(function()
+                local head = Char:FindFirstChild("Head")
+                if head then
+                    head.MeshId = "http://www.roblox.com/asset/?id=134079402"
+                    head.TextureID = "http://www.roblox.com/asset/?id=133940918"
+                    head.Transparency = 1
+                    local face = head:FindFirstChild("face") or head:FindFirstChildOfClass("Decal")
+                    if face then face.Transparency = 1 end
+                end
+            end)
+        end
+        applyHeadless()
+        -- Re-apply after respawn
+        LP.CharacterAdded:Connect(function(c)
+            if State.HeadlessTroll then
+                task.wait(1)
+                RefChar(c)
+                applyHeadless()
             end
         end)
     end
@@ -1467,21 +1524,6 @@ Btn(tSrv, "Lag: Part Spam", function()
         end
     end)
 end, 8)
-Btn(tSrv, "Lag: Remote Flood (Safe)", function()
-    task.spawn(function()
-        -- Slower, won't get kicked
-        local remotes = {}
-        for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-            if v:IsA("RemoteEvent") then table.insert(remotes, v) end
-        end
-        for round = 1, 3 do
-            for _, r in ipairs(remotes) do
-                pcall(function() r:FireServer() end)
-                task.wait(0.1)
-            end
-        end
-    end)
-end, 9)
 Btn(tSrv, "Lag: Particle Spam", function()
     task.spawn(function()
         for _, obj in ipairs(workspace:GetDescendants()) do
@@ -1493,30 +1535,13 @@ Btn(tSrv, "Lag: Particle Spam", function()
                 pe.Parent = obj
             end
         end
-        -- Auto clean after 10s
         task.wait(10)
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj.Name == "GS_Lag" then obj:Destroy() end
         end
     end)
-end, 10)
-Btn(tSrv, "Lag: Network Spam (Safe)", function()
-    task.spawn(function()
-        pcall(function()
-            local rem = game:GetService("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList")
-            if rem then
-                local smallData = {}
-                for i = 1, 50 do table.insert(smallData, {tostring(i)}) end
-                for i = 1, 5 do
-                    pcall(function() rem:FireServer(smallData) end)
-                    task.wait(0.5)
-                end
-            end
-        end)
-    end)
-end, 11)
+end, 9)
 Btn(tSrv, "Stop Lag Effects", function()
-    -- Clean up all lag stuff
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj.Name == "GS_Lag" then obj:Destroy() end
         if obj:IsA("Sound") and obj.SoundId == "rbxassetid://9114232807" then obj:Destroy() end
@@ -1524,7 +1549,7 @@ Btn(tSrv, "Stop Lag Effects", function()
     for _, obj in ipairs(workspace:GetChildren()) do
         if obj:IsA("Part") and not obj.Anchored and obj.Size == Vector3.new(2,2,2) then obj:Destroy() end
     end
-end, 12)
+end, 10)
 Btn(tSrv, "Lag: Item Spam (Extinguisher)", function()
     -- Brookhaven item spam: request tool many times, equip all, drop to workspace
     task.spawn(function()
@@ -1631,6 +1656,38 @@ Btn(avA, "Korblox (11827688)", function() FireAvatar("wear", 11827688) end, 6)
 Btn(avE, "Dance 1", function() pcall(function() Hum:LoadAnimation(Instance.new("Animation")):Play() end) end, 1)
 Btn(avE, "Sit", function() Hum.Sit = true end, 2)
 Btn(avE, "Jump", function() Hum:ChangeState(Enum.HumanoidStateType.Jumping) end, 3)
+TBox(avE, "Animation ID...", "CustomEmoteId", 4)
+Btn(avE, "Play Custom Emote", function()
+    pcall(function()
+        local id = tonumber(State.CustomEmoteId)
+        if not id then return end
+        local animator = Hum:FindFirstChildOfClass("Animator")
+        if not animator then
+            animator = Instance.new("Animator")
+            animator.Parent = Hum
+        end
+        -- Stop existing animations
+        for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+            track:Stop(0.1)
+        end
+        local anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://" .. id
+        local track = animator:LoadAnimation(anim)
+        track.Priority = Enum.AnimationPriority.Action4
+        track.Looped = true
+        track:Play(0.1)
+    end)
+end, 5)
+Btn(avE, "Stop Emote", function()
+    pcall(function()
+        local animator = Hum:FindFirstChildOfClass("Animator")
+        if animator then
+            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                track:Stop(0.1)
+            end
+        end
+    end)
+end, 6)
 
 -- ================================================================
 -- MISC TAB
@@ -1638,6 +1695,28 @@ Btn(avE, "Jump", function() Hum:ChangeState(Enum.HumanoidStateType.Jumping) end,
 local mA = GB(TabPages["Misc"], "Automation", 1)
 local mI = GB(TabPages["Misc"], "Info", 2)
 local mL = GB(TabPages["Misc"], "Links", 3)
+local mSp = GB(TabPages["Misc"], "Spectate", 4)
+
+TBox(mSp, "Player to spectate...", "SpectateTarget", 1)
+Btn(mSp, "View / Unview", function()
+    local t = FindPlayer(State.SpectateTarget)
+    if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+        local cam = workspace.CurrentCamera
+        if cam.CameraSubject == t.Character:FindFirstChildOfClass("Humanoid") then
+            -- Unview: go back to self
+            cam.CameraSubject = Hum
+        else
+            -- View: spectate target
+            cam.CameraSubject = t.Character:FindFirstChildOfClass("Humanoid")
+        end
+    else
+        -- Reset to self
+        workspace.CurrentCamera.CameraSubject = Hum
+    end
+end, 2)
+Btn(mSp, "Back to Self", function()
+    workspace.CurrentCamera.CameraSubject = Hum
+end, 3)
 
 Toggle(mA, "Auto Cash Collect", "AutoCash", nil, 1)
 Btn(mA, "Collect All Pickups", function()
@@ -2406,6 +2485,21 @@ task.spawn(function()
     task.spawn(function()
         task.wait(4)
         SendChat("brook.sense "..VERSION.." by kencsar")
+    end)
+
+    -- Auto set RP Name on startup
+    task.spawn(function()
+        task.wait(3)
+        pcall(function()
+            local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+            if re then
+                local remote = re:FindFirstChild("1RPNam1eTex1t")
+                if remote then
+                    remote:FireServer("brooksense by kencsar")
+                    remote:FireServer("OnVIPNameColor1", 2, 10)
+                end
+            end
+        end)
     end)
 end)
 
