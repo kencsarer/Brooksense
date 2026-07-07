@@ -1080,9 +1080,9 @@ Toggle(tNF, "Rainbow Name", "RainbowName", function(on)
                 pcall(function()
                     local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
                     if re then
-                        local remote = re:FindFirstChild("1RPNam1eTex1t")
+                        local remote = re:FindFirstChild("1RPNam1eColor")
                         if remote then
-                            remote:FireServer("OnVIPNameColor1", colorIndex, 10)
+                            remote:FireServer(colorIndex)
                         end
                     end
                 end)
@@ -1108,60 +1108,11 @@ end, 2)
 Slider(tOrb, "Orbit Speed", "SpinSpeed", 1, 20, nil, 3)
 Slider(tOrb, "Orbit Radius", "SpinRadius", 2, 20, nil, 4)
 
--- Skin Copy
+-- Skin Copy (NOTE: ApplyDescription only works server-side, this is limited)
 TBox(tSk, "Target username...", "SkinTarget", 1)
 Btn(tSk, "Copy Target Skin", function()
-    local t = FindPlayer(State.SkinTarget)
-    if not t then
-        -- copy nearest
-        local best, bd = nil, math.huge
-        for _, p in ipairs(GetPlayers()) do
-            if p.Character then
-                local r = p.Character:FindFirstChild("HumanoidRootPart")
-                if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = p end end
-            end
-        end
-        t = best
-    end
-    if not t or not t.Character then
-        print("[brooksense] Skin Copy failed: target player not found or has no character")
-        return
-    end
-    local ok2, desc = pcall(function()
-        return t.Character:FindFirstChildOfClass("Humanoid"):GetAppliedDescription()
-    end)
-    if not ok2 or not desc then
-        print("[brooksense] Skin Copy failed: could not get target's HumanoidDescription - " .. tostring(desc or "nil"))
-        return
-    end
-    local applyOk, applyErr = pcall(function() Char:FindFirstChildOfClass("Humanoid"):ApplyDescription(desc:Clone()) end)
-    if not applyOk then
-        print("[brooksense] Skin Copy failed: could not apply description - " .. tostring(applyErr))
-    end
-    -- fire brookhaven remote for accessories
-    local fields = {"Hat","HairAccessory","FaceAccessory","NeckAccessory","ShouldersAccessory","FrontAccessory","BackAccessory","WaistAccessory"}
-    for _, field in ipairs(fields) do
-        local v = nil
-        pcall(function() v = desc[field] end)
-        if v and v ~= "" then
-            for id in tostring(v):gmatch("%d+") do
-                local n = tonumber(id)
-                if n and n ~= 0 then FireAvatar("wear", n) end
-            end
-        end
-    end
+    print("[brooksense] Skin Copy: ApplyDescription only works server-side in most games. This feature is limited.")
 end, 2)
-Btn(tSk, "Copy Nearest Skin", function()
-    State.SkinTarget = ""
-    local best, bd = nil, math.huge
-    for _, p in ipairs(GetPlayers()) do
-        if p.Character then
-            local r = p.Character:FindFirstChild("HumanoidRootPart")
-            if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = p end end
-        end
-    end
-    if best then State.SkinTarget = best.Name end
-end, 3)
 
 -- Fling (FE Touch Fling - tested working method)
 TBox(tFl, "Fling target...", "FlingTarget", 1)
