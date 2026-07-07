@@ -2,12 +2,10 @@
 --  brooksense v2  |  by kencsar  |  discord: kencsar
 --  Solara compatible - no Luau-only syntax
 -- ================================================================
--- Prevent double execution
-if getgenv and getgenv().BrooksenseLoaded then
-    warn("[brooksense] Already running! Rejoin to restart.")
-    return
+-- Cleanup previous instance if re-running
+if getgenv and getgenv().BrooksenseGui then
+    pcall(function() getgenv().BrooksenseGui:Destroy() end)
 end
-if getgenv then getgenv().BrooksenseLoaded = true end
 
 local ok, err = xpcall(function()
 
@@ -603,6 +601,7 @@ local SG = N("ScreenGui", {
     IgnoreGuiInset = true,
     Parent = (gethui and gethui()) or LP:WaitForChild("PlayerGui")
 })
+if getgenv then getgenv().BrooksenseGui = SG end
 
 -- INTRO
 local Intro = N("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.new(0,0,0),BackgroundTransparency=0,BorderSizePixel=0,ZIndex=200,Parent=SG})
@@ -680,7 +679,6 @@ HBtn.MouseButton1Click:Connect(function() Win.Visible = false; Shadow.Visible = 
 XBtn.MouseButton1Click:Connect(function()
     SendChat("brooksense logged out")
     task.wait(0.2)
-    if getgenv then getgenv().BrooksenseLoaded = nil end
     SG:Destroy()
 end)
 
