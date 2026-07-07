@@ -660,6 +660,7 @@ HBtn.MouseButton1Click:Connect(function() Win.Visible = false; Shadow.Visible = 
 XBtn.MouseButton1Click:Connect(function()
     SendChat("brooksense logged out")
     task.wait(0.2)
+    if getgenv then getgenv().BrooksenseLoaded = nil end
     SG:Destroy()
 end)
 
