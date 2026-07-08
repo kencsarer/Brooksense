@@ -193,28 +193,16 @@ local function GetRemote(partialName)
 end
 
 local function FireAvatar(action, value)
-    local r = nil
     pcall(function()
         local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
         if re then
-            -- Search in RE folder for avatar-related remote
-            for _, v in ipairs(re:GetChildren()) do
-                local nm = v.Name:lower()
-                if nm:find("avatar") or nm:find("wear") or nm:find("skin") or nm:find("color") or nm:find("cloth") then
-                    r = v
-                    break
-                end
+            local remote = re:FindFirstChild("1UpdateAvata1r")
+            if remote then
+                remote:FireServer(action, value)
+                return
             end
         end
     end)
-    if not r then
-        r = GetRemote("avatar") or GetRemote("updateavatar") or GetRemote("pdateavatar") or GetRemote("wear") or GetRemote("skin")
-    end
-    if r then
-        pcall(function() r:FireServer(action, value) end)
-    else
-        print("[brooksense] Avatar remote not found!")
-    end
 end
 
 local function SendChat(msg)
@@ -605,15 +593,35 @@ if getgenv then getgenv().BrooksenseGui = SG end
 
 -- INTRO
 local Intro = N("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.new(0,0,0),BackgroundTransparency=0,BorderSizePixel=0,ZIndex=200,Parent=SG})
+local ILogo = N("ImageLabel",{
+    AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,80,0,80),
+    Position=UDim2.new(0.5,0,0.35,0), BackgroundTransparency=1,
+    Image="rbxassetid://117376803882154", ScaleType=Enum.ScaleType.Fit,
+    ImageTransparency=1, ZIndex=201, Parent=Intro
+})
 local ILbl = N("TextLabel",{
     AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,500,0,50),
-    Position=UDim2.new(0.5,0,0.5,-18), BackgroundTransparency=1, RichText=true,
-    Text='<font color="#B0B0C0">brook</font><font color="#C837C8">sense</font>',
+    Position=UDim2.new(0.5,0,0.55,0), BackgroundTransparency=1, RichText=false,
+    Text="brooksense",
     Font=Enum.Font.GothamBold, TextSize=36, TextTransparency=1, ZIndex=201, Parent=Intro
 })
+local ILblGrad = N("UIGradient",{Parent=ILbl})
+task.spawn(function()
+    local offset = 0
+    while ILbl and ILbl.Parent do
+        offset = (offset + 0.01) % 1
+        ILblGrad.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromHSV((offset) % 1, 0.6, 1)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromHSV((offset + 0.5) % 1, 0.6, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromHSV((offset + 1) % 1, 0.6, 1))
+        }
+        ILblGrad.Offset = Vector2.new(math.sin(offset * math.pi * 2) * 0.3, 0)
+        task.wait(0.03)
+    end
+end)
 local ISub = N("TextLabel",{
     AnchorPoint=Vector2.new(0.5,0.5), Size=UDim2.new(0,500,0,20),
-    Position=UDim2.new(0.5,0,0.5,24), BackgroundTransparency=1,
+    Position=UDim2.new(0.5,0,0.64,0), BackgroundTransparency=1,
     Text="by kencsar  |  discord: kencsar  |  "..VERSION,
     Font=Enum.Font.Gotham, TextSize=12, TextTransparency=1,
     TextColor3=Color3.fromRGB(70,70,90), ZIndex=201, Parent=Intro
@@ -640,16 +648,22 @@ local RbGrad = N("UIGradient",{Parent=RbBar})
 -- TITLE BAR
 local HDR_H = 33
 local TBar = N("Frame",{Size=UDim2.new(1,0,0,30),Position=UDim2.new(0,0,0,3),BackgroundColor3=C.HDR,BorderSizePixel=0,Parent=Win})
+N("ImageLabel",{
+    AnchorPoint=Vector2.new(0,0.5), Size=UDim2.new(0,20,0,20),
+    Position=UDim2.new(0,6,0.5,0), BackgroundTransparency=1,
+    Image="rbxassetid://117376803882154", ScaleType=Enum.ScaleType.Fit,
+    ZIndex=9, Parent=TBar
+})
 N("TextLabel",{
     AnchorPoint=Vector2.new(0,0.5), Size=UDim2.new(0,200,0,22),
-    Position=UDim2.new(0,12,0.5,0), BackgroundTransparency=1, RichText=true,
+    Position=UDim2.new(0,30,0.5,0), BackgroundTransparency=1, RichText=true,
     Text='<font color="#B0B0C0">brook</font><font color="#C837C8">sense</font> <font color="#505060">'..VERSION..'</font>',
     Font=Enum.Font.GothamBold, TextSize=14, TextColor3=C.Txt,
     TextXAlignment=Enum.TextXAlignment.Left, Parent=TBar
 })
 N("TextLabel",{
-    AnchorPoint=Vector2.new(1,0.5), Size=UDim2.new(0,160,0,20),
-    Position=UDim2.new(1,-52,0.5,0), BackgroundTransparency=1, RichText=true,
+    AnchorPoint=Vector2.new(1,0.5), Size=UDim2.new(0,130,0,20),
+    Position=UDim2.new(1,-50,0.5,0), BackgroundTransparency=1, RichText=true,
     Text='<font color="#404050">dc: </font><font color="#C837C8">kencsar</font>',
     Font=Enum.Font.Gotham, TextSize=11, TextColor3=C.Txt,
     TextXAlignment=Enum.TextXAlignment.Right, Parent=TBar
@@ -1127,11 +1141,46 @@ end, 2)
 Slider(tOrb, "Orbit Speed", "SpinSpeed", 1, 20, nil, 3)
 Slider(tOrb, "Orbit Radius", "SpinRadius", 2, 20, nil, 4)
 
--- Skin Copy (NOTE: ApplyDescription only works server-side, this is limited)
+-- Skin Copy (uses Brookhaven's own avatar remote)
 TBox(tSk, "Target username...", "SkinTarget", 1)
 Btn(tSk, "Copy Target Skin", function()
-    print("[brooksense] Skin Copy: ApplyDescription only works server-side in most games. This feature is limited.")
+    local t = FindPlayer(State.SkinTarget)
+    if not t then
+        local best, bd = nil, math.huge
+        for _, p in ipairs(GetPlayers()) do
+            if p.Character then
+                local r = p.Character:FindFirstChild("HumanoidRootPart")
+                if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = p end end
+            end
+        end
+        t = best
+    end
+    if not t then print("[brooksense] Skin Copy: no target found"); return end
+    -- Fire the Brookhaven avatar remote to copy target's look
+    pcall(function()
+        local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+        if re then
+            local remote = re:FindFirstChild("1UpdateAvata1r")
+            if remote then
+                remote:FireServer("copy", t.UserId)
+                remote:FireServer("CopyOutfit", t.UserId)
+                remote:FireServer("wear", t.UserId)
+                print("[brooksense] Skin Copy: sent to " .. t.Name)
+            end
+        end
+    end)
 end, 2)
+Btn(tSk, "Copy Nearest Skin", function()
+    State.SkinTarget = ""
+    local best, bd = nil, math.huge
+    for _, p in ipairs(GetPlayers()) do
+        if p.Character then
+            local r = p.Character:FindFirstChild("HumanoidRootPart")
+            if r then local d = (HRP.Position - r.Position).Magnitude; if d < bd then bd = d; best = p end end
+        end
+    end
+    if best then State.SkinTarget = best.Name end
+end, 3)
 
 -- Fling (FE Touch Fling - tested working method)
 TBox(tFl, "Fling target...", "FlingTarget", 1)
@@ -1405,20 +1454,30 @@ end, 13)
 
 -- Server Trolls
 Btn(tSrv, "Scare All (Sound)", function()
-    local r = GetRemote("gunsound") or GetRemote("GunSound")
-    if r then
-        for _, p in ipairs(Players:GetPlayers()) do
-            pcall(function() r:FireServer(p, 7083236436, 1) end)
+    pcall(function()
+        local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+        if re then
+            local r = re:FindFirstChild("1Gu1nSound1s")
+            if r then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    pcall(function() r:FireServer(p, 7083236436, 1) end)
+                end
+            end
         end
-    end
+    end)
 end, 1)
 Btn(tSrv, "Force Jump All", function()
-    local r = GetRemote("playertrigger") or GetRemote("PlayerTrigger")
-    if r then
-        for _, p in ipairs(Players:GetPlayers()) do
-            pcall(function() r:FireServer("DropButtonStopAll", p) end)
+    pcall(function()
+        local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+        if re then
+            local r = re:FindFirstChild("1Playe1rTrigge1rEven1t")
+            if r then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    pcall(function() r:FireServer("DropButtonStopAll", p) end)
+                end
+            end
         end
-    end
+    end)
 end, 2)
 Btn(tSrv, "Lag Server (Sound Spam)", function()
     task.spawn(function()
@@ -1464,21 +1523,33 @@ Btn(tSrv, "Lag Server (Network)", function()
     end)
 end, 5)
 Btn(tSrv, "Piggyback All (Kill)", function()
-    local r = GetRemote("playertrigger") or GetRemote("PlayerTrigger")
-    if not r then return end
-    for _, p in ipairs(GetPlayers()) do
-        pcall(function() r:FireServer("Client2ClientRequest: Piggyback!", p) end)
-        pcall(function() r:FireServer("BothWantPiggyBackRide", p) end)
-    end
+    pcall(function()
+        local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+        if re then
+            local r = re:FindFirstChild("1Playe1rTrigge1rEven1t")
+            if r then
+                for _, p in ipairs(GetPlayers()) do
+                    pcall(function() r:FireServer("Client2ClientRequest: Piggyback!", p) end)
+                    pcall(function() r:FireServer("BothWantPiggyBackRide", p) end)
+                end
+            end
+        end
+    end)
 end, 5)
 Btn(tSrv, "Freeze All", function()
-    local r = GetRemote("playertrigger") or GetRemote("PlayerTrigger")
-    if not r then return end
-    for _, p in ipairs(GetPlayers()) do
-        pcall(function() r:FireServer("Both want a piggyback ride", p) end)
-        task.wait(0.05)
-        pcall(function() r:FireServer("DropButtonStopAll", p) end)
-    end
+    pcall(function()
+        local re = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+        if re then
+            local r = re:FindFirstChild("1Playe1rTrigge1rEven1t")
+            if r then
+                for _, p in ipairs(GetPlayers()) do
+                    pcall(function() r:FireServer("Both want a piggyback ride", p) end)
+                    task.wait(0.05)
+                    pcall(function() r:FireServer("DropButtonStopAll", p) end)
+                end
+            end
+        end
+    end)
 end, 6)
 Btn(tSrv, "Lag: Sound Flood", function()
     task.spawn(function()
@@ -1770,15 +1841,45 @@ end, 1)
 Btn(sU, "Destroy GUI", function()
     SG:Destroy()
 end, 2)
+Btn(sU, "Language: English / Magyar", function()
+    -- Toggle language for tab names
+    local isHU = TabBtns["Player"].Text == "Jatekos"
+    if isHU then
+        TabBtns["Player"].Text = "Player"
+        TabBtns["Visuals"].Text = "Visuals"
+        TabBtns["World"].Text = "World"
+        TabBtns["Troll"].Text = "Troll"
+        TabBtns["Avatar"].Text = "Avatar"
+        TabBtns["Misc"].Text = "Misc"
+        TabBtns["Settings"].Text = "Settings"
+        TabBtns["About"].Text = "About"
+    else
+        TabBtns["Player"].Text = "Jatekos"
+        TabBtns["Visuals"].Text = "Latas"
+        TabBtns["World"].Text = "Vilag"
+        TabBtns["Troll"].Text = "Troll"
+        TabBtns["Avatar"].Text = "Avatar"
+        TabBtns["Misc"].Text = "Egyeb"
+        TabBtns["Settings"].Text = "Beall."
+        TabBtns["About"].Text = "Rolunk"
+    end
+end, 3)
 
 -- ================================================================
 -- ABOUT TAB
 -- ================================================================
 local abD = GB(TabPages["About"], "Developer", 1)
 local abC = GB(TabPages["About"], "Credits", 2)
-local abV = GB(TabPages["About"], "Version", 3)
+local abU = GB(TabPages["About"], "Updates", 3)
+local abV = GB(TabPages["About"], "Version", 4)
 
-N("TextLabel",{Size=UDim2.new(1,0,0,70),BackgroundTransparency=1,LayoutOrder=1,
+-- Developer avatar (Roblox headshot)
+N("ImageLabel",{Size=UDim2.new(0,60,0,60),Position=UDim2.new(0,0,0,0),
+    BackgroundColor3=C.ChkBg, Image="rbxthumb://type=AvatarHeadShot&id=7081707910&w=150&h=150",
+    LayoutOrder=0, ZIndex=7, Parent=abD})
+N("UICorner",{CornerRadius=UDim.new(1,0),Parent=abD:FindFirstChildOfClass("ImageLabel")})
+
+N("TextLabel",{Size=UDim2.new(1,-70,0,70),Position=UDim2.new(0,68,0,0),BackgroundTransparency=1,LayoutOrder=1,
     Text="brooksense "..VERSION.."\n\nDeveloper: kencsar\nDiscord: kencsar\nServer: discord.gg/nvuAjkcWX\n\nBest Brookhaven Script",
     Font=Enum.Font.Gotham,TextSize=12,TextColor3=C.Txt,TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true,Parent=abD})
 
@@ -1789,6 +1890,22 @@ N("TextLabel",{Size=UDim2.new(1,0,0,50),BackgroundTransparency=1,LayoutOrder=1,
 N("TextLabel",{Size=UDim2.new(1,0,0,30),BackgroundTransparency=1,LayoutOrder=1,
     Text="Version: "..VERSION.." | Build: "..os.date("%Y-%m-%d"),
     Font=Enum.Font.Gotham,TextSize=11,TextColor3=C.TxtD,TextXAlignment=Enum.TextXAlignment.Left,Parent=abV})
+
+-- Updates changelog
+local updateList = {
+    "v2 - Rainbow Name, FE Headless, Korblox, Hat Orbit",
+    "v2 - Touch Fling (FE method), Direction ESP",
+    "v2 - Target ESP, Spectate Player, Custom Emotes",
+    "v2 - Device selector (PC/Tablet/Mobile)",
+    "v2 - Webhook: chat log, join/leave, uptime, actions",
+    "v2 - Anti Ragdoll improved, FPS/Ping watermark",
+    "v1 - Initial release: ESP, Fly, Troll, Avatar",
+}
+for i, txt in ipairs(updateList) do
+    local uRow = N("TextLabel",{Size=UDim2.new(1,0,0,18),BackgroundTransparency=1,LayoutOrder=i,
+        Text="  - "..txt, Font=Enum.Font.Gotham, TextSize=10, TextColor3=C.TxtD,
+        TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Parent=abU})
+end
 
 -- ================================================================
 -- CORE LOOPS (RunService) - OPTIMIZED: 3 connections only
@@ -2187,8 +2304,8 @@ UserInputService.InputBegan:Connect(function(i, gp)
         local ts = TBar.AbsoluteSize
         if mp.X >= tp.X and mp.X <= tp.X + ts.X and mp.Y >= tp.Y and mp.Y <= tp.Y + ts.Y then
             dragActive = true
-            dragOffX = mp.X - Win.AbsolutePosition.X
-            dragOffY = mp.Y - Win.AbsolutePosition.Y
+            dragOffX = mp.X - Win.Position.X.Offset
+            dragOffY = mp.Y - Win.Position.Y.Offset
         end
     end
     -- Toggle GUI with Insert key (smooth fade using overlay)
@@ -2236,8 +2353,9 @@ end)
 
 UserInputService.InputChanged:Connect(function(i)
     if dragActive and i.UserInputType == Enum.UserInputType.MouseMovement then
-        local nx = math.clamp(i.Position.X - dragOffX, 0, Cam.ViewportSize.X - WW)
-        local ny = math.clamp(i.Position.Y - dragOffY, 0, Cam.ViewportSize.Y - WH)
+        local winSize = Win.AbsoluteSize
+        local nx = math.clamp(i.Position.X - dragOffX, 0, Cam.ViewportSize.X - winSize.X)
+        local ny = math.clamp(i.Position.Y - dragOffY, 0, Cam.ViewportSize.Y - winSize.Y)
         Win.Position = UDim2.new(0, nx, 0, ny)
         Shadow.Position = UDim2.new(0, nx - 4, 0, ny - 4)
     end
@@ -2252,10 +2370,13 @@ Shadow.Visible = false
 task.spawn(function()
     -- Intro fade in
     task.wait(0.15)
+    TW(ILogo, 0.5, {ImageTransparency=0}, Enum.EasingStyle.Quint)
+    task.wait(0.3)
     TW(ILbl, 0.6, {TextTransparency=0}, Enum.EasingStyle.Quint)
     task.wait(0.7)
     TW(ISub, 0.4, {TextTransparency=0})
     task.wait(1.5)
+    TW(ILogo, 0.3, {ImageTransparency=1})
     TW(ILbl, 0.3, {TextTransparency=1})
     TW(ISub, 0.3, {TextTransparency=1})
     task.wait(0.4)
@@ -2267,10 +2388,24 @@ task.spawn(function()
     local DeviceScreen = N("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(12,12,16),BackgroundTransparency=0,BorderSizePixel=0,ZIndex=150,Parent=SG})
     local DSTitle = N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(0,400,0,40),
-        Position=UDim2.new(0.5,0,0.15,0), BackgroundTransparency=1, RichText=true,
-        Text='<font color="#B0B0C0">brook</font><font color="#C837C8">sense</font>',
+        Position=UDim2.new(0.5,0,0.15,0), BackgroundTransparency=1, RichText=false,
+        Text="brooksense",
         Font=Enum.Font.GothamBold, TextSize=28, TextColor3=C.Txt, ZIndex=151, Parent=DeviceScreen
     })
+    local DSGrad = N("UIGradient",{Parent=DSTitle})
+    task.spawn(function()
+        local offset = 0
+        while DSTitle and DSTitle.Parent do
+            offset = (offset + 0.01) % 1
+            DSGrad.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.fromHSV((offset) % 1, 0.6, 1)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromHSV((offset + 0.5) % 1, 0.6, 1)),
+                ColorSequenceKeypoint.new(1, Color3.fromHSV((offset + 1) % 1, 0.6, 1))
+            }
+            DSGrad.Offset = Vector2.new(math.sin(offset * math.pi * 2) * 0.3, 0)
+            task.wait(0.03)
+        end
+    end)
     local DSSub = N("TextLabel",{
         AnchorPoint=Vector2.new(0.5,0), Size=UDim2.new(0,400,0,20),
         Position=UDim2.new(0.5,0,0.23,0), BackgroundTransparency=1,
