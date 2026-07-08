@@ -1252,14 +1252,12 @@ end, 3)
 Toggle(tM, "Chat Spam", "ChatSpam", nil, 1)
 Toggle(tM, "Spin Self", "SpinSelf", nil, 2)
 Slider(tM, "Spin Speed", "SpinSelfSpeed", 1, 50, nil, 3)
-Toggle(tM, "Headless (FE)", "HeadlessTroll", function(on)
+Toggle(tM, "Headless (Local Only)", "HeadlessTroll", function(on)
     if on then
         local function applyHeadless()
             pcall(function()
                 local head = Char:FindFirstChild("Head")
                 if head then
-                    head.MeshId = "http://www.roblox.com/asset/?id=134079402"
-                    head.TextureID = "http://www.roblox.com/asset/?id=133940918"
                     head.Transparency = 1
                     local face = head:FindFirstChild("face") or head:FindFirstChildOfClass("Decal")
                     if face then face.Transparency = 1 end
@@ -1267,12 +1265,20 @@ Toggle(tM, "Headless (FE)", "HeadlessTroll", function(on)
             end)
         end
         applyHeadless()
-        -- Re-apply after respawn
         LP.CharacterAdded:Connect(function(c)
             if State.HeadlessTroll then
                 task.wait(1)
                 RefChar(c)
                 applyHeadless()
+            end
+        end)
+    else
+        pcall(function()
+            local head = Char:FindFirstChild("Head")
+            if head then
+                head.Transparency = 0
+                local face = head:FindFirstChild("face") or head:FindFirstChildOfClass("Decal")
+                if face then face.Transparency = 0 end
             end
         end)
     end
